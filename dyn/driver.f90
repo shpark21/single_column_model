@@ -2,6 +2,10 @@ program driver
 
   implicit none
 
+======= pms
+  integer :: a,b 
+  real :: p, m, s
+=======
 ======= by jh
   integer :: a,b 
 
@@ -16,6 +20,7 @@ program driver
 
   open()
   call cal_delta_t() 
+
 
   
 end program driver
