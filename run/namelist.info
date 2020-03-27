@@ -1,0 +1,14 @@
+&Time_control
+  dt              = 1
+  nt              = 100
+  output_interval = 5
+  ! output_interval = n, write output file every 'n' step
+/
+
+&Domain
+
+/
+
+&Data_paths
+
+/
