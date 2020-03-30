@@ -1,0 +1,23 @@
+&Time_control
+  dt              = 60  !! second
+  nt              = 10
+/
+
+&Domain
+  dz              = 100.0   !! unit = m
+  z_top           = 2000.0  !! unit = m
+  z_sfc           = 0.0     !! unit = m
+/
+
+&Other_options
+  ramma_dry       = 0.01  !! unit = K/100m
+
+/
+
+&file_info    
+  T_output_file_path = "/home/gihh1131/HOMEWORK/MICROPHYSICS/single_column_model/OUTPUT/"
+  T_output_file_name = "FD_test_module_T.txt" 
+  q_output_file_path = "/home/gihh1131/HOMEWORK/MICROPHYSICS/single_column_model/OUTPUT/"
+  q_output_file_name = "FD_test_module_q.txt" 
+
+/
