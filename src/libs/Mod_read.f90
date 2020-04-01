@@ -4,8 +4,9 @@ MODULE Mod_read
 
   IMPLICIT NONE
 
-  NAMELIST /Time_control/ dt,       &
-                          nt
+  NAMELIST /Time_control/ dt,              &
+                          nt,              &
+                          output_interval 
 
   NAMELIST /Domain      / nz,       &
                           z_top,    &
@@ -35,8 +36,10 @@ MODULE Mod_read
 
       IMPLICIT NONE
 
-      OPEN(10,FILE='namelist.info')
+      OPEN(10,FILE='./namelist.info', iostat=ionum)
 
+      IF ( ionum .ne. 0 ) CALL FAIL_MSG("error namelist")
+      
       READ(10, Time_control)
       READ(10, Domain      )
       READ(10, Options)

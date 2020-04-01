@@ -17,7 +17,8 @@ MODULE Mod_init
     !   ENDIF
     ! END SUBROUTINE Sub_Cal_P 
 
-  !!---------------------------!!
+    !!---------------------------------------------!!
+    !!---------------------------------------------!!
     SUBROUTINE Sub_set_grid
 
     IMPLICIT NONE
@@ -27,13 +28,13 @@ MODULE Mod_init
       ELSE IF ( dz_option .eq. 2) THEN
         dz(1) = dz_1st
         DO iz = 2, nz
-          dz(iz) = dz(iz-1)*1.05
+          dz(iz) = dz(iz-1)*dzr
         ENDDO !! z
       ENDIF
     END SUBROUTINE Sub_set_grid
-
-
-  !!---------------------------!!
+   
+    !!---------------------------------------------!!
+    !!---------------------------------------------!!
     SUBROUTINE Sub_Set_T
 
       IMPLICIT NONE
@@ -46,16 +47,22 @@ MODULE Mod_init
       !! initial  condition
       DO iz = 1, nz
         IF (iz .EQ. 1) THEN
-          Temp(iz) = sfc_Temp(1) - gamma_dry * dz
+          Temp(iz) = sfc_Temp(1) - gamma_dry * dz(iz)
         ELSE
-          Temp(iz) = Temp(iz-1) - gamma_dry * dz
+          Temp(iz) = Temp(iz-1) - gamma_dry * dz(iz)
         ENDIF !! iz = 1 & others
       ENDDO !! Temp from 1 to nz
 
+      DO it = 1, nt
+        top_Temp(it) = Temp(nz)
+      ENDDO !! time do
+
+      
 
     END SUBROUTINE Sub_Set_T
 
-
+    !!---------------------------------------------!!
+    !!---------------------------------------------!!
     SUBROUTINE Sub_Cal_W
 
       ! IF (it = 0) THEN
@@ -82,34 +89,18 @@ MODULE Mod_init
     END SUBROUTINE Sub_Cal_W  
    
     !!---------------------------------------------!!
-    !!---Sub_name :                        --------!!
-    !!---Input var :                       --------!!
-    !!---Ouput var :                       --------!!
-    !!---What is that :                    --------!!
     !!---------------------------------------------!!
     SUBROUTINE hydrostatic_eq
-
     END SUBROUTINE hydrostatic_eq
 
     !!---------------------------------------------!!
-    !!---Sub_name :                        --------!!
-    !!---Input var :                       --------!!
-    !!---Ouput var :                       --------!!
-    !!---What is that :                    --------!!
     !!---------------------------------------------!!
     SUBROUTINE W_linear      
-
     END SUBROUTINE W_linear      
 
-
     !!---------------------------------------------!!
-    !!---Sub_name :                        --------!!
-    !!---Input var :                       --------!!
-    !!---Ouput var :                       --------!!
-    !!---What is that :                    --------!!
     !!---------------------------------------------!!
     SUBROUTINE W_exponantial
-
     END SUBROUTINE W_exponantial
 
 END MODULE Mod_init

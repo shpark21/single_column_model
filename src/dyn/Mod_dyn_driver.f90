@@ -3,6 +3,8 @@ MODULE Mod_dyn_driver
   USE Mod_global
   IMPLICIT NONE
 
+  CONTAINS
+
   SUBROUTINE Sub_Finite_diff      &
              (                    &
                var, sfc_var,       &
@@ -24,6 +26,7 @@ MODULE Mod_dyn_driver
     REAL,    DIMENSION(nz),     INTENT(IN)    :: dz
     ! Local
     INTEGER                                   :: i
+    REAL,    DIMENSION(nz)                    :: C 
     ! OUT
     REAL,    DIMENSION(nz),     INTENT(OUT)   :: next_var
 
@@ -67,12 +70,13 @@ MODULE Mod_dyn_driver
 
     DO i = 1, nz
       IF ( i .eq. 1 ) then
-        backward_flux_var(i) = sfc_var*w(i)*dt
+        backward_flux_var(i) = sfc_var*w(i-1)*dt
       ELSE
-        backward_flux_var(i) = var(i-1)*w(i)*dt
+        backward_flux_var(i) = var(i-1)*w(i-1)*dt
       ENDIF
-      forward_flux_var(i)  = var(i)*w(i+1)*dt
-      next_var(i) = var(i) + (backward_flux_var(i)-forward_flux_var(i))/dz
+      forward_flux_var(i)  = var(i)*w(i)*dt
+      next_var(i) = var(i) + (backward_flux_var(i)-forward_flux_var(i))/dz(i)
+      write(*,*) backward_flux_var(i), forward_flux_var(i)
     ENDDO
   END SUBROUTINE Sub_Finite_volume
 

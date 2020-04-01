@@ -1,5 +1,5 @@
 &Time_control
-  dt              = 30          !! second
+  dt              = 60          !! second
   nt              = 10
   output_interval = 5
 /
@@ -13,7 +13,7 @@
 &Options
   gamma_dry       = 0.01        !! unit = K/m
 
-  dyn_option      = 2           !! 1 : Finite Diff., 2 : Finite volume
+  dyn_option      = 1           !! 1 : Finite Diff., 2 : Finite volume
 
   dz_option       = 1           !! 1 : dz=z_top/nz, 2 : geomatric sequence
                                 !! You need below options, when you choose geomatric sequence
@@ -27,3 +27,9 @@
   q_output_file_path = "/home/gihh1131/HOMEWORK/MICROPHYSICS/single_column_model/OUTPUT/"
   q_output_file_name = "FD_test_module_q.txt"
 /
+
+&Options
+  dyn_option = 1
+  ! 1 : Finite Diff., 2 : Finite volume
+/
+

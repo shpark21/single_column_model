@@ -5,9 +5,11 @@ MODULE Mod_global
   INTEGER :: it, iz   !! do parameter
 
     !! for namelist val
-  INTEGER            :: nt
-  INTEGER            :: nz
-  INTEGER            :: dt
+  INTEGER            :: nt,              &
+                        nz,              &
+                        dt,              &
+                        ionum,           &
+                        output_interval
   INTEGER            :: dyn_option
   INTEGER            :: dz_option
   REAL               :: z_top,      &
@@ -43,16 +45,16 @@ MODULE Mod_global
     !!-----------------------------!!
     SUBROUTINE Sub_allocate
 
-      IF (.NOT. ALLOCATED(Temp       )) ALLOCATE(Temp          (nz))
-      IF (.NOT. ALLOCATED(sfc_Temp   )) ALLOCATE(sfc_Temp      (nt))
-      IF (.NOT. ALLOCATED(top_Temp   )) ALLOCATE(top_Temp      (nt))
-      IF (.NOT. ALLOCATED(next_Temp  )) ALLOCATE(next_Temp     (nz))
+      IF (.NOT. ALLOCATED(Temp       )) ALLOCATE(Temp            (nz))
+      IF (.NOT. ALLOCATED(sfc_Temp   )) ALLOCATE(sfc_Temp        (nt))
+      IF (.NOT. ALLOCATED(top_Temp   )) ALLOCATE(top_Temp        (nt))
+      IF (.NOT. ALLOCATED(next_Temp  )) ALLOCATE(next_Temp       (nz))
       IF (.NOT. ALLOCATED(output_Temp)) ALLOCATE(output_Temp(0:nt,nz))
 
-      IF (.NOT. ALLOCATED(q          )) ALLOCATE(q          (nz))
-      IF (.NOT. ALLOCATED(sfc_q      )) ALLOCATE(sfc_q      (nt))
-      IF (.NOT. ALLOCATED(top_q      )) ALLOCATE(top_q      (nt))
-      IF (.NOT. ALLOCATED(next_q     )) ALLOCATE(next_q     (nz))
+      IF (.NOT. ALLOCATED(q          )) ALLOCATE(q            (nz))
+      IF (.NOT. ALLOCATED(sfc_q      )) ALLOCATE(sfc_q        (nt))
+      IF (.NOT. ALLOCATED(top_q      )) ALLOCATE(top_q        (nt))
+      IF (.NOT. ALLOCATED(next_q     )) ALLOCATE(next_q       (nz))
       IF (.NOT. ALLOCATED(output_q   )) ALLOCATE(output_q(0:nt,nz))
 
       IF (.NOT. ALLOCATED(w          )) THEN  
