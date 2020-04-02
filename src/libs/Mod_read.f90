@@ -9,19 +9,15 @@ MODULE Mod_read
                           output_interval 
 
   NAMELIST /Domain      / nz,       &
-                          z_top,    &
-                          z_sfc
+                          z_top
 
   NAMELIST /Options/ gamma_dry,     &
                      dyn_option,    &
                      dz_option,     &
-                     dzr,           &
-                     dz_1st
+                     dzr
 
-  NAMELIST /file_info/ T_output_file_path, &
-                       T_output_file_name, &
-                       q_output_file_path, &
-                       q_output_file_name
+  NAMELIST /file_info/ output_path, &
+                       output_name
 
 
     CONTAINS
@@ -42,8 +38,8 @@ MODULE Mod_read
       
       READ(10, Time_control)
       READ(10, Domain      )
-      READ(10, Options)
-      READ(10, file_info)
+      READ(10, Options     )
+      READ(10, file_info   )
 
     END SUBROUTINE Sub_read_namelist
 

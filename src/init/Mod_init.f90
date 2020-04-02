@@ -22,15 +22,23 @@ MODULE Mod_init
     SUBROUTINE Sub_set_grid
 
     IMPLICIT NONE
-      
+
+      ! Cal. dz      
       IF ( dz_option .eq. 1) THEN
-        dz(:) = z_top/nz
+        dz%dz(:) = z_top/nz
       ELSE IF ( dz_option .eq. 2) THEN
-        dz(1) = dz_1st
+        dz%dz(1) = ((dzr-1)*z_top)/((dzr**nz)-1) 
         DO iz = 2, nz
-          dz(iz) = dz(iz-1)*dzr
+          dz%dz(iz) = dz%dz(iz-1)*dzr
         ENDDO !! z
       ENDIF
+
+      ! Cal. height     
+      z%dz(1)= dz%dz(1)
+      DO iz = 2, nz
+        z%dz(iz)= z%dz(iz-1) + dz%dz(iz)
+      ENDDO
+
     END SUBROUTINE Sub_set_grid
    
     !!---------------------------------------------!!
@@ -41,23 +49,21 @@ MODULE Mod_init
 
       !! boundary condition
       DO it = 1, nt
-        sfc_Temp(it) = 20. + 273.5
+        Temp%sfc_dt(it) = 20. + 273.5
       ENDDO !! time do
 
       !! initial  condition
       DO iz = 1, nz
         IF (iz .EQ. 1) THEN
-          Temp(iz) = sfc_Temp(1) - gamma_dry * dz(iz)
+          Temp%dz(iz) = Temp%sfc_dt(1) - gamma_dry * dz%dz(iz)
         ELSE
-          Temp(iz) = Temp(iz-1) - gamma_dry * dz(iz)
+          Temp%dz(iz) = Temp%dz(iz-1) - gamma_dry * dz%dz(iz)
         ENDIF !! iz = 1 & others
       ENDDO !! Temp from 1 to nz
 
       DO it = 1, nt
-        top_Temp(it) = Temp(nz)
+        Temp%top_dt(it) = Temp%dz(nz)
       ENDDO !! time do
-
-      
 
     END SUBROUTINE Sub_Set_T
 
@@ -83,8 +89,8 @@ MODULE Mod_init
       !
       ! ENDIF !! about it
 
-      w(:) = 5. 
-      w(nz) = 0. 
+      w%dz(:) = 0.5 
+      w%dz(nz) = 0. 
 
     END SUBROUTINE Sub_Cal_W  
    

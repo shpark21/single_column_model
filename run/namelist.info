@@ -1,13 +1,12 @@
 &Time_control
-  dt              = 30          !! second
-  nt              = 10
+  dt              = 1          !! second
+  nt              = 30
   output_interval = 5
 /
 
 &Domain
   nz              = 100         !! unit = number of vertical layer
-  z_top           = 2000.0      !! unit = m
-  z_sfc           = 0.0         !! unit = m
+  z_top           = 5000.0      !! unit = m
 /
 
 &Options
@@ -15,15 +14,14 @@
 
   dyn_option      = 2           !! 1 : Finite Diff., 2 : Finite volume
 
-  dz_option       = 1           !! 1 : dz=z_top/nz, 2 : geomatric sequence
-                                !! You need below options, when you choose geomatric sequence
-    dzr           = 1.05
-    dz_1st        = 1
+  dz_option       = 1           !! 1 : arithmetic progression, dz=z_top/nz 
+                                !! 2 : geomatric sequence, dz(k)=dz(k-1)*dzr
+
+    dzr           = 1.05        !! You need this options, when you choose
+                                !! geomatric sequence (dz_option = 2) 
 /
 
 &file_info
-  T_output_file_path = "/home/gihh1131/HOMEWORK/MICROPHYSICS/single_column_model/OUTPUT/"
-  T_output_file_name = "FD_test_module_T.txt"
-  q_output_file_path = "/home/gihh1131/HOMEWORK/MICROPHYSICS/single_column_model/OUTPUT/"
-  q_output_file_name = "FD_test_module_q.txt"
+  output_path = "./"
+  output_name = "output.nc"
 /
