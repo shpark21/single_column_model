@@ -1,6 +1,7 @@
 MODULE Mod_integration
 
   USE Mod_global
+  USE Mod_dyn_driver
 
   IMPLICIT NONE
 
@@ -13,44 +14,45 @@ MODULE Mod_integration
 
       IMPLICIT NONE
 
-      output_temp(0,:)=next_temp(:)
-      output_q(0,:)=next_q(:)
+      ! temp%dout     = 0. 
+      ! q%dout        = 0.
+
+      temp%dout(1,:)=temp%dz(:)
+      q%dout(1,:)=q%dz(:)
 
       DO it = 1, nt
 
-        CALL Sub_Finite_volume ( temp, sfc_temp,      &    
-                                 dz, nz,              &    
-                                 dt,                  &    
-                                 w,                   &    
-                                 next_temp           ) 
+        CALL Sub_Finite_volume ( temp%dz, temp%sfc_dt(it),  &
+                                 temp%top_dt(it),           &
+                                 dz%dz, nz,                 &
+                                 dt,                        &
+                                 w%dz,                      &
+                                 temp%next_dz               &
+                                                           )
 
+        CALL Sub_Finite_volume ( q%dz, q%sfc_dt(it),        &
+                                 q%top_dt(it),              &
+                                 dz%dz, nz,                 &
+                                 dt,                        &
+                                 w%dz,                      &
+                                 q%next_dz                  & 
+                                                           )
 
-        CALL Sub_Finite_volume ( q, sfc_q,            &   
-                                 dz, nz,              & 
-                                 dt,                  & 
-                                 w,                   & 
-                                 next_q              )  
+        IF (ALLOCATED(temp%dz)) DEALLOCATE(temp%dz)
+        IF (ALLOCATED(q%dz   )) DEALLOCATE(q%dz   )
+        IF (.NOT. ALLOCATED(temp%dz)) ALLOCATE(temp%dz(nz))
+        IF (.NOT. ALLOCATED(q%dz   )) ALLOCATE(q%dz   (nz))
 
-        temp(:)=next_temp(:)
-        q(:)=next_q(:)
+        temp%dz(:)=temp%next_dz(:)
+        q%dz(:)=q%next_dz(:)
  
-        output_temp(it,:)=next_temp(:)
-        output_q(it,:)=next_q(:)
+        temp%dout(it+1,:)=temp%next_dz(:)
+        q%dout(it+1,:)=q%next_dz(:)
 
         ! CALL Sub_Cal_P
         ! CALL Sub_Cal_W
         !!CALL cloud_pysics
-      write(*,*) sum(next_temp), sum(next_q)
       ENDDO !! time do
-
-
-       integer :: nnt
-       nnt = nt + 1
-       OPEN(51,file="temp.bin",form="unformatted", &
-               status="unknown",access="direct",recl=4*nnt*nz)
-
-       !write(51,rec=1) (temp_wr(it,:),it=1,nt)
-       write(51,rec=1) (q_wr(it,:),it=0,nt)
 
     END SUBROUTINE Sub_Integration_FV
 
@@ -61,45 +63,38 @@ MODULE Mod_integration
 
       IMPLICIT NONE
 
-      output_temp(0,:)=next_temp(:)
-      output_q(0,:)=next_q(:)
+      INTEGER :: nnt
+      temp%dout(1,:)=temp%dz(:)
+      q%dout(1,:)=q%dz(:)
 
       DO it = 1, nt
 
-        CALL Sub_Finite_diff ( temp, sfc_temp,      &
-                                 top_temp           &
-                                 dz, nz,            &
-                                 dt,                &
-                                 w,                 &
-                                 next_temp         )
+        CALL Sub_Finite_diff ( temp%dz, temp%sfc_dt(it),    &
+                                 temp%top_dt(it),           &
+                                 dz%dz, nz,                 &
+                                 dt,                        &
+                                 w%dz,                      &
+                                 temp%next_dz               &
+                                                           )
+  
+        CALL Sub_Finite_diff ( q%dz, q%sfc_dt(it),          &
+                                 q%top_dt(it),              &
+                                 dz%dz, nz,                 &
+                                 dt,                        &
+                                 w%dz,                      &
+                                 q%next_dz                  & 
+                                                           )
 
-
-        CALL Sub_Finite_diff ( q, sfc_q,            &
-                                 top_q              &
-                                 dz, nz,            &
-                                 dt,                &
-                                 w,                 &
-                                 next_q            )
-
-        temp(:)=next_temp(:)
-        q(:)=next_q(:)
-
-        output_temp(it,:)=next_temp(:)
-        output_q(it,:)=next_q(:)
+        temp%dz(:)=temp%next_dz(:)
+        q%dz(:)=q%next_dz(:)
+  
+        temp%dout(it+1,:)=temp%next_dz(:)
+        q%dout(it+1,:)=q%next_dz(:)
 
         ! CALL Sub_Cal_P
         ! CALL Sub_Cal_W
         !!CALL cloud_pysics
-      write(*,*) sum(next_temp), sum(next_q)
       ENDDO !! time do
 
-       integer :: nnt
-       nnt = nt + 1
-       OPEN(51,file="temp.bin",form="unformatted", &
-               status="unknown",access="direct",recl=4*nnt*nz)
-  
-       !write(51,rec=1) (temp_wr(it,:),it=1,nt)
-       write(51,rec=1) (q_wr(it,:),it=0,nt)
-  
     END SUBROUTINE Sub_Integration_FD
 ENDMODULE

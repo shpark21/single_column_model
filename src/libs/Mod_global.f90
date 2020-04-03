@@ -1,89 +1,160 @@
 MODULE Mod_global
 
+  USE NETCDF
   IMPLICIT NONE
    
   INTEGER :: it, iz   !! do parameter
 
     !! for namelist val
-  INTEGER            :: nt
-  INTEGER            :: nz
-  INTEGER            :: dt
-  INTEGER            :: dyn_option
-  INTEGER            :: dz_option
-  REAL               :: z_top,      &
-                        z_sfc,      &
-                        z_ext       
+  INTEGER            :: nt,                 &
+                        nz,                 &
+                        dt,                 &
+                        ionum,              &
+                        output_interval
+
+  INTEGER            :: dyn_option,         &
+                        dz_option
+
+  REAL               :: z_top
+
   REAL               :: gamma_dry
-  REAL               :: dzr,        &
-                        dz_1st 
-  CHARACTER(LEN=256) :: T_output_file_path, &
-                        T_output_file_name, &
-                        q_output_file_path, &
-                        q_output_file_name
 
-    !! Allocate val
-  REAL, DIMENSION(:),   ALLOCATABLE   :: sfc_Temp     !! unit = K
-  REAL, DIMENSION(:),   ALLOCATABLE   :: top_Temp     !! unit = K
-  REAL, DIMENSION(:),   ALLOCATABLE   :: Temp         !! unit = K
-  REAL, DIMENSION(:),   ALLOCATABLE   :: next_Temp    !! unit = K
-  REAL, DIMENSION(:,:), ALLOCATABLE   :: output_Temp  !! unit = K
+  REAL               :: dzr
 
-  REAL, DIMENSION(:),   ALLOCATABLE   :: sfc_q        !! unit = num.
-  REAL, DIMENSION(:),   ALLOCATABLE   :: top_q        !! unit = num.
-  REAL, DIMENSION(:),   ALLOCATABLE   :: q            !! unit = number
-  REAL, DIMENSION(:),   ALLOCATABLE   :: next_q       !! unit = number
-  REAL, DIMENSION(:,:), ALLOCATABLE   :: output_q     !! unit = K
+  CHARACTER(LEN=256) :: output_path, &
+                        output_name
 
-  REAL, DIMENSION(:), ALLOCATABLE   :: w          !! unit = m/s
-  REAL, DIMENSION(:), ALLOCATABLE   :: z          !! unit = m
-  REAL, DIMENSION(:), ALLOCATABLE   :: dz          !! unit = m
+    ! Declare variables 
+  TYPE varinfo
+    INTEGER                           :: varid
+    REAL, DIMENSION(:),   ALLOCATABLE :: dz, next_dz,      &
+                                         dt,               &
+                                         sfc_dt, top_dt  
+    REAL, DIMENSION(:,:), ALLOCATABLE :: dout        
+    CHARACTER(LEN=256)                :: vname, axis,      &
+                                         desc, units
+  END TYPE varinfo
 
-    CONTAINS
+  TYPE(varinfo) ::    Temp,      & !! Temperature [K] 
+                      q,         & !! Number of water droplets
+                      w,         & !! Vertical velocity
+                      dz,        & !! Difference z
+                      z            !! Height 
 
-    !!-----------------------------!!
-    SUBROUTINE Sub_allocate
+    ! For nc file 
+  INTEGER                       :: ncid,                       &
+                                   rec_dimid, lev_dimid
 
-      IF (.NOT. ALLOCATED(Temp       )) ALLOCATE(Temp          (nz))
-      IF (.NOT. ALLOCATED(sfc_Temp   )) ALLOCATE(sfc_Temp      (nt))
-      IF (.NOT. ALLOCATED(top_Temp   )) ALLOCATE(top_Temp      (nt))
-      IF (.NOT. ALLOCATED(next_Temp  )) ALLOCATE(next_Temp     (nz))
-      IF (.NOT. ALLOCATED(output_Temp)) ALLOCATE(output_Temp(0:nt,nz))
+  INTEGER,            PARAMETER :: dim1     = 1,               &
+                                   dim2     = 2
+  
+  INTEGER, DIMENSION(dim1)      :: dimid1
+  INTEGER, DIMENSION(dim2)      :: dimid2
+  INTEGER, DIMENSION(dim1)      :: dim1_start, dim1_count
+  INTEGER, DIMENSION(dim2)      :: dim2_start, dim2_count
+  
+  CHARACTER(LEN=256), PARAMETER :: rc_name  = "Time"            !! time
+  CHARACTER(LEN=256), PARAMETER :: des      = "description"
+  CHARACTER(LEN=256), PARAMETER :: un       = "units"
+  CHARACTER(LEN=256), PARAMETER :: ax       = "axis"
 
-      IF (.NOT. ALLOCATED(q          )) ALLOCATE(q          (nz))
-      IF (.NOT. ALLOCATED(sfc_q      )) ALLOCATE(sfc_q      (nt))
-      IF (.NOT. ALLOCATED(top_q      )) ALLOCATE(top_q      (nt))
-      IF (.NOT. ALLOCATED(next_q     )) ALLOCATE(next_q     (nz))
-      IF (.NOT. ALLOCATED(output_q   )) ALLOCATE(output_q(0:nt,nz))
+  CONTAINS
 
-      IF (.NOT. ALLOCATED(w          )) THEN  
-        IF ( dyn_option .eq. 1) THEN
-          ALLOCATE(w       (nz))
-        ELSE IF ( dyn_option .eq. 2 ) THEN
-          ALLOCATE(w       (0:nz))
-        ELSE
-          CALL Fail_msg(" dyn_option must be integer // Choose either 1 or 2 ")
-        ENDIF
+  !!-----------------------------!!
+  SUBROUTINE Sub_allocate
+
+    IF (.NOT. ALLOCATED(Temp%dz      )) ALLOCATE(Temp%dz        (nz))
+    IF (.NOT. ALLOCATED(Temp%sfc_dt  )) ALLOCATE(Temp%sfc_dt    (nt))
+    IF (.NOT. ALLOCATED(Temp%top_dt  )) ALLOCATE(Temp%top_dt    (nt))
+    IF (.NOT. ALLOCATED(Temp%next_dz )) ALLOCATE(Temp%next_dz   (nz))
+    IF (.NOT. ALLOCATED(Temp%dout    )) ALLOCATE(Temp%dout (nt+1,nz))
+
+    IF (.NOT. ALLOCATED(q%dz         )) ALLOCATE(q%dz           (nz))
+    IF (.NOT. ALLOCATED(q%sfc_dt     )) ALLOCATE(q%sfc_dt       (nt))
+    IF (.NOT. ALLOCATED(q%top_dt     )) ALLOCATE(q%top_dt       (nt))
+    IF (.NOT. ALLOCATED(q%next_dz    )) ALLOCATE(q%next_dz      (nz))
+    IF (.NOT. ALLOCATED(q%dout       )) ALLOCATE(q%dout    (nt+1,nz))
+
+    IF (.NOT. ALLOCATED(w%dz         )) THEN  
+      IF ( dyn_option .eq. 1) THEN
+        ALLOCATE(w%dz   (nz))
+      ELSE IF ( dyn_option .eq. 2 ) THEN
+        ALLOCATE(w%dz   (0:nz))
+      ELSE
+        CALL Fail_msg(" dyn_option must be integer // Choose either 1 or 2 ")
       ENDIF
-      IF (.NOT. ALLOCATED(z          )) ALLOCATE(z        (nz))
-      IF (.NOT. ALLOCATED(dz         )) ALLOCATE(dz       (nz))
+    ENDIF
+    IF (.NOT. ALLOCATED(dz%dz     )) ALLOCATE(dz%dz   (nz))
+    IF (.NOT. ALLOCATED(z%dz      )) ALLOCATE(z%dz    (nz))
 
-    END SUBROUTINE Sub_allocate
-   
-    !!-----------------------------!!
-    SUBROUTINE Sub_deallocate
-    END SUBROUTINE Sub_deallocate
+  END SUBROUTINE Sub_allocate
+ 
+  !!-----------------------------!!
+  SUBROUTINE Sub_deallocate
+  END SUBROUTINE Sub_deallocate
 
-    !!-----------------------------!!
-    SUBROUTINE FAIL_MSG(f_msg)
+  !!-----------------------------!!
+  SUBROUTINE Sub_nc_attri
 
-      IMPLICIT NONE
-      CHARACTER(LEN=*), INTENT(IN) :: f_msg
+    ! Set name of variables.
+    Temp%vname     = "T"
+    q%vname        = "Q"
+    w%vname        = "W"
+    z%vname        = "Lev"
 
-      write (*,'("FAIL: ", a)') f_msg
-      stop "##### ERROR: PROGRAM ABORTED. #####"
+    ! Set "Description" attributes.
+    Temp%desc      = "Temperature"
+    q%desc         = "number of water droplets"
+    w%desc         = "Vertical velocity"
+    z%desc         = "Height"
 
-    END SUBROUTINE FAIL_MSG
+    ! Set "units" attributes.
+    Temp%units     = "K"
+    q%units        = "  "
+    w%units        = "m s-1"
+    z%units        = "m"
 
+    ! Set "axis" attributes.
+    z%axis         = "Z"
+
+  END SUBROUTINE Sub_nc_attri
+
+  !!-----------------------------!!
+  SUBROUTINE CHECK(status)
+
+    IMPLICIT NONE
+
+    INTEGER, INTENT(IN) :: status
+
+    !Check errors.
+    IF (status .ne. nf90_noerr) THEN
+     PRINT *, trim(nf90_strerror(status))
+     PRINT *, "    ERROR :: CHECK NC CODE       "
+     STOP "##### ERROR: PROGRAM ABORTED. #####"
+    END IF
+
+  END SUBROUTINE CHECK
+
+  !!-----------------------------!!
+  SUBROUTINE FAIL_MSG(f_msg)
+
+    IMPLICIT NONE
+    CHARACTER(LEN=*), INTENT(IN) :: f_msg
+
+    WRITE (*,'("FAIL: ", a)') f_msg
+    STOP "##### ERROR: PROGRAM ABORTED. #####"
+
+  END SUBROUTINE FAIL_MSG
+
+  !!-----------------------------!!
+  SUBROUTINE SUCCESS_MSG(s_msg)
+
+    IMPLICIT NONE
+    CHARACTER(LEN=*), INTENT(IN) :: s_msg
+    
+    WRITE (*,'("SUCCESS: ", a)') s_msg
+
+  END SUBROUTINE SUCCESS_MSG 
 
 
 END MODULE Mod_global
