@@ -17,8 +17,8 @@ MODULE Mod_integration
       ! temp%dout     = 0. 
       ! q%dout        = 0.
 
-      temp%dout(1,:)=temp%dz(:)
-      q%dout(1,:)=q%dz(:)
+      temp%dout(:,1)=temp%dz(:)
+      q%dout(:,1)=q%dz(:)
 
       DO it = 1, nt
 
@@ -46,8 +46,8 @@ MODULE Mod_integration
         temp%dz(:)=temp%next_dz(:)
         q%dz(:)=q%next_dz(:)
  
-        temp%dout(it+1,:)=temp%next_dz(:)
-        q%dout(it+1,:)=q%next_dz(:)
+        temp%dout(:,it+1)=temp%next_dz(:)
+        q%dout(:,it+1)=q%next_dz(:)
 
         ! CALL Sub_Cal_P
         ! CALL Sub_Cal_W

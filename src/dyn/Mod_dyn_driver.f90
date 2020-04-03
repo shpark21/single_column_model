@@ -75,18 +75,21 @@ MODULE Mod_dyn_driver
       
       IF ( i .eq. 1 ) then  
         backward_flux_var(i) = sfc_var*w(i-1)*dt  
+        forward_flux_var(i)  = var(i)*w(i)*dt
+        next_var(i) = var(i) + (backward_flux_var(i)-forward_flux_var(i))/dz(i)
+      ELSE IF ( i .eq. nz ) then
+        backward_flux_var(i) = var(i-1)*w(i-1)*dt
+        forward_flux_var(i)  = top_var*w(i)*dt
+        next_var(i) = var(i) + (backward_flux_var(i)-forward_flux_var(i))/dz(i)
       ELSE
         backward_flux_var(i) = var(i-1)*w(i-1)*dt
-      ENDIF
-      IF ( i .eq. nz ) then
-        forward_flux_var(i)  = top_var*w(i)*dt
-      ELSE
         forward_flux_var(i)  = var(i)*w(i)*dt
+        next_var(i) = var(i) + backward_flux_var(i)/(dz(i-1)/2)-forward_flux_var(i)/(dz(i)/2)
       ENDIF
-      next_var(i) = var(i) + (backward_flux_var(i)-forward_flux_var(i))/dz(i)
       IF ( next_var(i) .lt. 0. ) THEN
         CALL FAIL_MSG("ERROR :: dynamics, Physical quantity cannot be negative.check 'dt', 'w'")
       ENDIF
+
     ENDDO
 
     IF (ALLOCATED(backward_flux_var ))  DEALLOCATE(backward_flux_var )

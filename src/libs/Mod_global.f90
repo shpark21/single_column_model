@@ -25,6 +25,7 @@ MODULE Mod_global
                         output_name
 
     ! Declare variables 
+    INTEGER                           :: varid
   TYPE varinfo
     INTEGER                           :: varid
     REAL, DIMENSION(:),   ALLOCATABLE :: dz, next_dz,      &
@@ -39,6 +40,7 @@ MODULE Mod_global
                       q,         & !! Number of water droplets
                       w,         & !! Vertical velocity
                       dz,        & !! Difference z
+                      time,      & !! Difference z
                       z            !! Height 
 
     ! For nc file 
@@ -53,7 +55,6 @@ MODULE Mod_global
   INTEGER, DIMENSION(dim1)      :: dim1_start, dim1_count
   INTEGER, DIMENSION(dim2)      :: dim2_start, dim2_count
   
-  CHARACTER(LEN=256), PARAMETER :: rc_name  = "Time"            !! time
   CHARACTER(LEN=256), PARAMETER :: des      = "description"
   CHARACTER(LEN=256), PARAMETER :: un       = "units"
   CHARACTER(LEN=256), PARAMETER :: ax       = "axis"
@@ -67,13 +68,13 @@ MODULE Mod_global
     IF (.NOT. ALLOCATED(Temp%sfc_dt  )) ALLOCATE(Temp%sfc_dt    (nt))
     IF (.NOT. ALLOCATED(Temp%top_dt  )) ALLOCATE(Temp%top_dt    (nt))
     IF (.NOT. ALLOCATED(Temp%next_dz )) ALLOCATE(Temp%next_dz   (nz))
-    IF (.NOT. ALLOCATED(Temp%dout    )) ALLOCATE(Temp%dout (nt+1,nz))
+    IF (.NOT. ALLOCATED(Temp%dout    )) ALLOCATE(Temp%dout (nz,nt+1))
 
     IF (.NOT. ALLOCATED(q%dz         )) ALLOCATE(q%dz           (nz))
     IF (.NOT. ALLOCATED(q%sfc_dt     )) ALLOCATE(q%sfc_dt       (nt))
     IF (.NOT. ALLOCATED(q%top_dt     )) ALLOCATE(q%top_dt       (nt))
     IF (.NOT. ALLOCATED(q%next_dz    )) ALLOCATE(q%next_dz      (nz))
-    IF (.NOT. ALLOCATED(q%dout       )) ALLOCATE(q%dout    (nt+1,nz))
+    IF (.NOT. ALLOCATED(q%dout       )) ALLOCATE(q%dout    (nz,nt+1))
 
     IF (.NOT. ALLOCATED(w%dz         )) THEN  
       IF ( dyn_option .eq. 1) THEN
@@ -101,21 +102,25 @@ MODULE Mod_global
     q%vname        = "Q"
     w%vname        = "W"
     z%vname        = "Lev"
+    time%vname     = "Time"
+
 
     ! Set "Description" attributes.
     Temp%desc      = "Temperature"
-    q%desc         = "number of water droplets"
+    q%desc         = "mass of water droplets"
     w%desc         = "Vertical velocity"
     z%desc         = "Height"
 
     ! Set "units" attributes.
     Temp%units     = "K"
-    q%units        = "  "
+    q%units        = "kg kg-1"
     w%units        = "m s-1"
     z%units        = "m"
+    time%units     = "minutes since 2000-01-01 00:00:00"
 
     ! Set "axis" attributes.
     z%axis         = "Z"
+    time%axis      = "T"
 
   END SUBROUTINE Sub_nc_attri
 

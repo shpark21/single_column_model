@@ -27,12 +27,6 @@ PROGRAM main_prog
     CALL Sub_Integration_FV
   ENDIF
 
-  ! write(*,*)  nz, nt, w%dz
-  ! write(*,*)  dz%dz, z%dz
-   ! write(*,*) temp%dout(:, 100)
-   write(*,*) q%dout(30,:)
-   write(*,*) sum(q%dout(30,:))
-
   CALL Sub_write_netcdf ( nz, nt, dz%dz, z%dz,      &
                           temp%dout, q%dout,        &
                           w%dz(1:nz),               &
