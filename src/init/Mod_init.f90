@@ -89,7 +89,7 @@ MODULE Mod_init
       !
       ! ENDIF !! about it
 
-      w%dz(:) = 0.5 
+      w%dz(:) = 1. 
       w%dz(nz) = 0. 
 
     END SUBROUTINE Sub_Cal_W  

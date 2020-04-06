@@ -1,20 +1,20 @@
 &Time_control
-  dt              = 1          !! second
+  dt              = 1        !! second
   nt              = 300
   output_interval = 5
 /
 
 &Domain
-  nz              = 100         !! unit = number of vertical layer
+  nz              = 50          !! unit = number of vertical layer
   z_top           = 5000.0      !! unit = m
 /
 
 &Options
   gamma_dry       = 0.01        !! unit = K/m
 
-  dyn_option      = 2           !! 1 : Finite Diff., 2 : Finite volume
+  dyn_option      = 3           !! 1 : Finite Diff., 2 : Finite volume, 3 : PPM
 
-  dz_option       = 1           !! 1 : arithmetic progression, dz=z_top/nz 
+  dz_option       = 2           !! 1 : arithmetic progression, dz=z_top/nz 
                                 !! 2 : geomatric sequence, dz(k)=dz(k-1)*dzr
 
     dzr           = 1.05        !! You need this options, when you choose

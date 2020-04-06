@@ -17,7 +17,7 @@ PROGRAM main_prog
   CALL Sub_Cal_W
   CALL Sub_Set_T
 
-  q%dz(50)=100.
+  q%dz(20)=100.
   q%sfc_dt(:)=0.
   q%top_dt(:)=0.
 
@@ -25,7 +25,12 @@ PROGRAM main_prog
     CALL Sub_Integration_FD
   ELSE IF (dyn_option .eq. 2) THEN
     CALL Sub_Integration_FV
+  ELSE IF (dyn_option .eq. 3) THEN
+    CALL Sub_Integration_PPM
   ENDIF
+
+   write(*,*) sum(q%dout(:,2))
+   write(*,*) sum(q%dout(:,300))
 
   CALL Sub_write_netcdf ( nz, nt, dz%dz, z%dz,      &
                           temp%dout, q%dout,        &

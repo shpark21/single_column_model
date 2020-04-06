@@ -27,6 +27,9 @@ ifort Mod_global.f90          \
      -L/$NETCDF/lib -I/$NETCDF/include -lnetcdf
 ./main.exe  
 # 2>/dev/null
-
+rm -f mod_global.mod  Mod_global.o  mod_read.mod  Mod_read.o 
+rm -f Mod_init.o mod_init.mod mod_integration.mod Mod_integration.o 
+rm -f mod_dyn_driver.mod Mod_dyn_driver.o mod_write.mod Mod_write.o
+rm -f output.nc main.exe 
 exit 0
 #=====================================================================

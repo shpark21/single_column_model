@@ -45,15 +45,17 @@ MODULE Mod_global
 
     ! For nc file 
   INTEGER                       :: ncid,                       &
-                                   rec_dimid, lev_dimid
+                                   rec_dimid, lev_dimid,       &
+                                   lat_dimid, lon_dimid
+  
 
   INTEGER,            PARAMETER :: dim1     = 1,               &
-                                   dim2     = 2
+                                   dim4     = 4
   
   INTEGER, DIMENSION(dim1)      :: dimid1
-  INTEGER, DIMENSION(dim2)      :: dimid2
+  INTEGER, DIMENSION(dim4)      :: dimid4
   INTEGER, DIMENSION(dim1)      :: dim1_start, dim1_count
-  INTEGER, DIMENSION(dim2)      :: dim2_start, dim2_count
+  INTEGER, DIMENSION(dim4)      :: dim4_start, dim4_count
   
   CHARACTER(LEN=256), PARAMETER :: des      = "description"
   CHARACTER(LEN=256), PARAMETER :: un       = "units"
@@ -77,13 +79,13 @@ MODULE Mod_global
     IF (.NOT. ALLOCATED(q%dout       )) ALLOCATE(q%dout    (nz,nt+1))
 
     IF (.NOT. ALLOCATED(w%dz         )) THEN  
-      IF ( dyn_option .eq. 1) THEN
-        ALLOCATE(w%dz   (nz))
-      ELSE IF ( dyn_option .eq. 2 ) THEN
+      ! IF ( dyn_option .eq. 1) THEN
+      !   ALLOCATE(w%dz   (nz))
+      ! ELSE IF ( dyn_option .eq. 2 ) THEN
         ALLOCATE(w%dz   (0:nz))
-      ELSE
-        CALL Fail_msg(" dyn_option must be integer // Choose either 1 or 2 ")
-      ENDIF
+      ! ELSE
+      !   CALL Fail_msg(" dyn_option must be integer // Choose either 1 or 2 ")
+      ! ENDIF
     ENDIF
     IF (.NOT. ALLOCATED(dz%dz     )) ALLOCATE(dz%dz   (nz))
     IF (.NOT. ALLOCATED(z%dz      )) ALLOCATE(z%dz    (nz))
