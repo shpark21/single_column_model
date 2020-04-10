@@ -71,11 +71,12 @@ MODULE Mod_init
     !!---------------------------------------------!!
     SUBROUTINE Sub_Cal_W
 
-      ! IF (it = 0) THEN
-      !   W(1:nz) = 1.0 !! m/s
-      !   W(nz+1) = 0.0 !! m/s
-      ! ELSE
-      !
+    IMPLICIT NONE
+
+      w%dz(0:nz-1) = 1.0 !! m/s
+      w%dz(nz)     = 0.0 !! m/s
+
+
       !   SELECT CASE (W_opt)
       !
       !     CASE ("linear")
@@ -86,11 +87,6 @@ MODULE Mod_init
       !       CALL W_linear
       !
       !   ENDSELECT !! about W_opt
-      !
-      ! ENDIF !! about it
-
-      w%dz(:) = 1. 
-      w%dz(nz) = 0. 
 
     END SUBROUTINE Sub_Cal_W  
    

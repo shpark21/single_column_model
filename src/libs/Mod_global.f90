@@ -78,17 +78,10 @@ MODULE Mod_global
     IF (.NOT. ALLOCATED(q%next_dz    )) ALLOCATE(q%next_dz      (nz))
     IF (.NOT. ALLOCATED(q%dout       )) ALLOCATE(q%dout    (nz,nt+1))
 
-    IF (.NOT. ALLOCATED(w%dz         )) THEN  
-      ! IF ( dyn_option .eq. 1) THEN
-      !   ALLOCATE(w%dz   (nz))
-      ! ELSE IF ( dyn_option .eq. 2 ) THEN
-        ALLOCATE(w%dz   (0:nz))
-      ! ELSE
-      !   CALL Fail_msg(" dyn_option must be integer // Choose either 1 or 2 ")
-      ! ENDIF
-    ENDIF
-    IF (.NOT. ALLOCATED(dz%dz     )) ALLOCATE(dz%dz   (nz))
-    IF (.NOT. ALLOCATED(z%dz      )) ALLOCATE(z%dz    (nz))
+    IF (.NOT. ALLOCATED(w%dz         )) ALLOCATE(w%dz         (0:nz))
+
+    IF (.NOT. ALLOCATED(dz%dz        )) ALLOCATE(dz%dz          (nz))
+    IF (.NOT. ALLOCATED(z%dz         )) ALLOCATE(z%dz           (nz))
 
   END SUBROUTINE Sub_allocate
  
