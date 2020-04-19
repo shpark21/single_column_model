@@ -19,7 +19,7 @@ rm -f ${srcdir}/mod_dyn_driver.mod ${srcdir}/Mod_dyn_driver.o ${srcdir}/mod_writ
 rm -f ${srcdir}/mod_phys_driver.mod ${srcdir}/Mod_dyn_driver.o 
 rm -f ${srcdir}/output.nc main.exe 
 
-ifort ${srcdir}/libs/Mod_global.f90          \
+ifort -r8 ${srcdir}/libs/Mod_global.f90          \
       ${srcdir}/libs/Mod_read.f90            \
       ${srcdir}/init/Mod_init.f90            \
       ${srcdir}/dyn/Mod_dyn_driver.f90       \

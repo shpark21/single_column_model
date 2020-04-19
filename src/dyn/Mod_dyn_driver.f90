@@ -39,7 +39,7 @@ MODULE Mod_dyn_driver
     DO i = 1, nz
 
       c(i) = interp_w(i)*dt/dz(i)
-      IF ( c(i) .lt. 1) THEN !! CFL filter
+      IF ( c(i) .le. 1) THEN !! CFL filter
         IF ( i .eq. 1 ) THEN
           next_var(i) = var(i) - interp_w(i)*dt*(var(i+1)-sfc_var)/(2*dz(i))
         ELSE IF ( i .eq. nz ) THEN
@@ -73,49 +73,45 @@ MODULE Mod_dyn_driver
     INTEGER,                    INTENT(IN)    :: nz
     REAL,                       INTENT(IN)    :: sfc_var
     REAL,                       INTENT(IN)    :: top_var
-    REAL,    DIMENSION(nz),     INTENT(IN)    :: var
-    REAL,    DIMENSION(0:nz),   INTENT(IN)    :: w
-    REAL,    DIMENSION(nz),     INTENT(IN)    :: dz
+    REAL,    DIMENSION(nz),     INTENT(IN)    :: var,     &
+                                                 dz
+    REAL,    DIMENSION(1:nz+1), INTENT(IN)    :: w
     ! Local
     INTEGER                                   :: i
-    REAL,    DIMENSION(nz)                    :: c 
-    REAL,    ALLOCATABLE                      :: backward_flux_var(:)
-    REAL,    ALLOCATABLE                      :: forward_flux_var(:)
+    REAL                                      :: c, rst,  &
+                                                 dvar  
+    REAL,    DIMENSION(nz)                    :: slp            
+    REAL,    DIMENSION(nz+1)                  :: flux
     ! OUT
     REAL,    DIMENSION(nz),     INTENT(OUT)   :: next_var
 
-    IF(.NOT. ALLOCATED( backward_flux_var )) ALLOCATE(backward_flux_var(nz))
-    IF(.NOT. ALLOCATED( forward_flux_var  )) ALLOCATE(forward_flux_var (nz))
+    ! Do outflow B.C 
+    flux(1)   = w(1)*var(1)       
+    flux(nz+1) = w(nz+1)*var(nz)
 
-    DO i = 1, nz
-      
-      c(i) = w(i)*dt/dz(i)
-      IF ( c(i) .lt. 1) THEN !! CFL filter 
-        IF ( i .eq. 1 ) then  
-          backward_flux_var(i) = sfc_var*w(i-1)*dt  
-          forward_flux_var(i)  = var(i)*w(i)*dt
-          next_var(i) = var(i) + (backward_flux_var(i)-forward_flux_var(i))/dz(i)
-        ELSE IF ( i .eq. nz ) then
-          backward_flux_var(i) = var(i-1)*w(i-1)*dt
-          forward_flux_var(i)  = top_var*w(i)*dt
-          next_var(i) = var(i) + (backward_flux_var(i)-forward_flux_var(i))/dz(i)
-        ELSE
-          backward_flux_var(i) = var(i-1)*w(i-1)*dt
-          forward_flux_var(i)  = var(i)*w(i)*dt
-          next_var(i) = var(i) + (backward_flux_var(i)/dz(i-1))-(forward_flux_var(i)/dz(i))
-        ENDIF
-        IF ( next_var(i) .lt. 0. ) THEN !! mass conservation filter
-          write(*,*) " i    = ", i,"CFL  =  ", c(i)
-          CALL FAIL_MSG("ERROR :: dynamics, Physical quantity cannot be negative.check 'dt', 'w'")
-        ENDIF
+    DO i = 1, nz+1
+      CALL Sub_cal_slope ( var, dz, nz, slp )
+      IF (w(i) >= 0.) THEN
+        IF (i == 1) CYCLE          ! inflow
+        c   = dt*w(i)/dz(i-1)  
+        rst = (var(i-1) + 0.5*slp(i-1)*(1.-c)) / dz(i-1)
       ELSE
-        write(*,*) " i    = ", i,"CFL  =  ", c(i)
-        CALL FAIL_MSG("ERROR : You need to check CFL condition.")
-      ENDIF
+        IF (i == nz+1) CYCLE       ! inflow
+        c   = -dt*w(i)/dz(i)
+        rst = (var(i) - 0.5*slp(i)*(1.-c)) / dz(i)
+      END IF
+      flux(i) = w(i) * rst
+      IF (c .gt. 1.)  CALL FAIL_MSG("Courant number > 1")
     ENDDO
  
-    IF (ALLOCATED(backward_flux_var ))  DEALLOCATE(backward_flux_var )
-    IF (ALLOCATED(forward_flux_var  ))  DEALLOCATE(forward_flux_var  )
+    DO i = 1, nz
+      dvar        = - (flux(i+1) - flux(i)) 
+      next_var(i) = var(i) + dvar * dt
+      IF ( next_var(i) .lt. 0. ) THEN !! mass conservation filter
+        CALL FAIL_MSG("ERROR :: dynamics, Physical quantity cannot be negative")
+      ENDIF
+    END DO
+      
 
   END SUBROUTINE Sub_Finite_volume
 
@@ -147,6 +143,7 @@ MODULE Mod_dyn_driver
     INTEGER                                :: i, j, k, ks, ke
     REAL                                   :: cn, rsum, dzsum, dtw
     REAL                                   :: cflerr, cflmaxx, cflmax, cflmaxcc
+    REAL                                   :: dvar
     INTEGER                                :: kk
 
     ke=nz
@@ -162,20 +159,20 @@ MODULE Mod_dyn_driver
     ENDDO
 
     ! boundary values  
-    var_left (2)    = (var(1)+var(2))*(7./12.)-(sfc_var+var(3))*(1./12.)
-    var_right(1)    = var_left(2) 
-    var_left (nz)   = (var(nz-1)+var(nz))*(7./12.)-(var(nz-2)+top_var)*(1./12.)
-    var_right(nz-1) = var_left(nz) 
+    var_left (1) = var(1) - 0.5*slp(1)
+    var_right(1) = var(1) + 0.5*slp(1)
+    var_left (nz) = var(nz) - 0.5*slp(nz)
+    var_right(nz) = var(nz) + 0.5*slp(nz)
 
     ! make linear assumption near boundary
-    var_left (1)  = var(1) - 0.5*slp(1)
-    var_right(nz) = var(nz) + 0.5*slp(nz)
+    var_left (2) = var(2) - 0.5*slp(2)
+    var_right(nz-1) = var(nz-1) + 0.5*slp(nz-1)
 
     IF (.true.) THEN
       ! limiters from Lin (2003), Equation 6 (relaxed constraint)
       DO k = 1, nz
-         var_left (k) = var(k) - sign(min(abs(slp(k)),abs(var_left(k)-var(k))), slp(k) )
-         var_right(k) = var(k) + sign(min(abs(slp(k)),abs(var_right(k)-var(k))), slp(k) )
+        var_left (k) = var(k) - sign(min(abs(slp(k)),abs(var_left(k)-var(k))), slp(k) )
+        var_right(k) = var(k) + sign(min(abs(slp(k)),abs(var_right(k)-var(k))), slp(k) )
       ENDDO
     ELSE
       ! limiters from Colella and Woodward (1984), Equation 1.10
@@ -195,84 +192,83 @@ MODULE Mod_dyn_driver
     ENDIF
 
     ! compute fluxes at interfaces
-    flux(ks)   = w(ks)  *var(ks)
-    flux(ke+1) = w(ke+1)*var(ke)
+    ! flux(ks)   = w(ks)  *var(ks)
+    ! flux(ke+1) = w(ke+1)*var(ke)
+
+    ! B.C = 0. 
+    flux(ks)   = 0. 
+    flux(ke+1) = 0. 
 
     ! Cal. flux
     tt = 2./3.
     DO k = 2, nz+1
-       IF (w(k) >= 0.) THEN
-           IF (k == ks) CYCLE ! inflow
-           cn = dt*w(k)/dz(k-1)
-           kk = k-1
-           ! extension for Courant numbers > 1
-           IF (cn > 1.) THEN
-               rsum = 0.
-               dzsum = 0.
-               dtw = dt*w(k)
-               DO WHILE (dzsum+dz(kk) < dtw)
-                  IF (kk == 1) THEN
-                      exit
-                  ENDIF
-                  dzsum = dzsum + dz(kk)
-                   rsum =  rsum +  var(kk)
-                  kk = kk-1
-               ENDDO
-               xx = (dtw-dzsum)/dz(kk)
-           ELSE
-               xx = cn
-           ENDIF
-           rm = var_right(kk) - var_left(kk)
-           r6 = 6.0*(var(kk) - 0.5*(var_right(kk) + var_left(kk)))
-           IF (kk == ks) r6 = 0.
-           rst = var_right(kk) - 0.5*xx*(rm - (1.0 - tt*xx)*r6)
-            
-           ! extension for Courant numbers > 1
-           IF (cn > 1.) rst = (xx*rst + rsum)/cn
-       ELSE
-           IF (k == ke+1) CYCLE ! inflow
-           cn = - dt*w(k)/dz(k)
-           kk = k
-           ! extension for Courant numbers > 1
-           IF (cn > 1.) THEN
-               rsum = 0.
-               dzsum = 0.
-               dtw = -dt*w(k)
-               DO WHILE (dzsum+dz(kk) < dtw)
-                  IF (kk == ks) THEN
-                      EXIT
-                  ENDIF
-                  dzsum = dzsum + dz(kk)
-                   rsum =  rsum + var(kk)
-                  kk = kk+1
-               ENDDO
-               xx = (dtw-dzsum)/dz(kk)
-           ELSE
-               xx = cn
-           ENDIF
-           rm = var_right(kk) - var_left(kk)
-           r6 = 6.0*(var(kk) - 0.5*(var_right(kk) + var_left(kk)))
-           IF (kk == ke) r6 = 0.
-           rst = var_left(kk) + 0.5*xx*(rm + (1.0 - tt*xx)*r6)
-           ! extension for Courant numbers > 1
-           IF (cn > 1.) rst = (xx*rst + rsum)/cn
-       ENDIF
-       flux(k) = w(k)*rst
+      IF (w(k) >= 0.) THEN
+        IF (k == ks) CYCLE ! inflow
+        cn = dt*w(k)/dz(k-1)
+        kk = k-1
+        ! extension for Courant numbers > 1
+        IF (cn > 1.) THEN
+          rsum = 0.
+          dzsum = 0.
+          dtw = dt*w(k)
+          DO WHILE (dzsum+dz(kk) < dtw)
+            IF (kk == 1) THEN
+              exit
+            ENDIF
+            dzsum = dzsum + dz(kk)
+             rsum =  rsum +  var(kk)
+            kk = kk-1
+          ENDDO
+          xx = (dtw-dzsum)/dz(kk)
+        ELSE
+          xx = cn
+        ENDIF
+        rm = var_right(kk) - var_left(kk)
+        r6 = 6.0*(var(kk) - 0.5*(var_right(kk) + var_left(kk)))
+        IF (kk == ks) r6 = 0.
+        rst = ( var_right(kk) - 0.5*xx*(rm - (1.0 - tt*xx)*r6) ) / dz(k-1)
+         
+        ! extension for Courant numbers > 1
+        IF (cn > 1.) rst = (xx*rst + rsum)/cn
+      ELSE
+        IF (k == ke+1) CYCLE ! inflow
+        cn = - dt*w(k)/dz(k)
+        kk = k
+        ! extension for Courant numbers > 1
+        IF (cn > 1.) THEN
+          rsum = 0.
+          dzsum = 0.
+          dtw = -dt*w(k)
+          DO WHILE (dzsum+dz(kk) < dtw)
+            IF (kk == ks) THEN
+              EXIT
+            ENDIF
+            dzsum = dzsum + dz(kk)
+             rsum =  rsum + var(kk)
+            kk = kk+1
+          ENDDO
+          xx = (dtw-dzsum)/dz(kk)
+        ELSE
+          xx = cn
+        ENDIF
+        rm = var_right(kk) - var_left(kk)
+        r6 = 6.0*(var(kk) - 0.5*(var_right(kk) + var_left(kk)))
+        IF (kk == ke) r6 = 0.
+        rst = ( var_left(kk) + 0.5*xx*(rm + (1.0 - tt*xx)*r6) ) / dz(k)
+        ! extension for Courant numbers > 1
+        IF (cn > 1.) rst = (xx*rst + rsum)/cn
+      ENDIF
+      flux(k) = w(k)*rst
     ENDDO
 
-   ! Cal. FV
-    DO k = 1, nz
-      IF ( k .eq. 1 ) then
-        next_var(k) = var(k) - dt*(flux(k+1)-flux(k))/dz(k)
-      ELSE IF ( k .eq. nz ) then
-        next_var(k) = var(k) - dt*(flux(k+1)-flux(k))/dz(k)
-      ELSE
-        next_var(k) = var(k) - dt*((flux(k+1)/dz(k+1)) - (flux(k)/dz(k)))
+    ! Cal. FV
+    DO i = 1, nz
+      dvar        = - (flux(i+1) - flux(i))
+      next_var(i) = var(i) + dvar * dt
+      IF ( next_var(i) .lt. 0. ) THEN !! mass conservation filter
+        CALL FAIL_MSG("ERROR :: dynamics, Physical quantity cannot be negative")
       ENDIF
-    IF ( next_var(k) .lt. 0.0 ) then
-      CALL FAIL_MSG("ppm problem")
-    ENDIF
-  ENDDO
+    END DO
   END SUBROUTINE Sub_Finite_volume_PPM
 
 
@@ -283,47 +279,52 @@ MODULE Mod_dyn_driver
     REAL,    DIMENSION(:), INTENT(OUT)  :: slope
 
     REAL    :: grad(2:nz)
-    REAL    :: rmin, rmax
-    INTEGER :: i, j, k, n
+    REAL    :: cmin, cmax
+    INTEGER :: k
     LOGICAL :: limiters, dolinear
 
     limiters = .true.
-    dolinear = .true.
+    dolinear = .false.
 
-    n = nz 
+     
     ! compute slope (weighted for unequal levels)
-    DO k = 2, n
+    DO k = 2, nz
       grad(k) = (var(k)-var(k-1))/(dz(k)+dz(k-1))
     ENDDO
     IF (dolinear) THEN
-      DO k = 2, n-1
+      DO k = 2, nz-1
         slope(k) = (grad(k+1)+grad(k))*dz(k)
       ENDDO
     ELSE
-      DO k = 2, n-1
+      DO k = 2, nz-1
         slope(k) = (grad(k+1)*(2.*dz(k-1)+dz(k)) + &
                     grad(k  )*(2.*dz(k+1)+dz(k)))  &
                      *dz(k)/(dz(k-1)+dz(k)+dz(k+1))
       ENDDO
     ENDIF
     slope(1) = 2.*grad(2)*dz(1)
-    slope(n) = 2.*grad(n)*dz(n)
-   ! apply limiters to slope
-     IF (limiters) THEN
-        DO k = 1, n
-          IF (k >= 2 .and. k <= n-1) THEN
-            rmin = min(var(k-1), var(k), var(k+1))
-            rmax = max(var(k-1), var(k), var(k+1))
-            slope(k) = sign(1.,slope(k)) *  &
-                   min( abs(slope(k)), 2.*(var(k)-rmin),2.*(rmax-var(k)) )
-          ELSE
-            slope(k) = 0.
-          ENDIF
-        ENDDO
-     ENDIF
+    slope(nz) = 2.*grad(nz)*dz(nz)
+  
+    if (limiters) then
+      do k = 1, nz
+        if (k >= 2 .and. k <= nz-1) then
+          Cmin = min(var(k-1), var(k), var(k+1))
+          Cmax = max(var(k-1), var(k), var(k+1))
+          slope(k) = sign(1.,slope(k)) *  &
+                      min( abs(slope(k)), &
+                        2.*(var(k)-Cmin), &
+                        2.*(Cmax-var(k))  )   ! Equation 1.8
+        else
+          slope(k) = 0.  ! always slope=0
+        endif
+      enddo
+    endif 
+
    END SUBROUTINE Sub_cal_slope
 
-  SUBROUTINE Sub_cal_weights ( dz, zwt )
+   SUBROUTINE Sub_cal_weights ( dz, zwt )
+
+    IMPLICIT NONE
     REAL, DIMENSION(:),    INTENT(IN)   :: dz
     REAL, DIMENSION(0:,:), INTENT(OUT)  :: zwt
     REAL    :: denom1, denom2, denom3, denom4, num3, num4, x, y
@@ -344,7 +345,6 @@ MODULE Mod_dyn_driver
       zwt(2,k) = dz(k-1)*num3*denom3*denom2    ! = 1/6 ''
       zwt(3,k) = dz(k)*num4*denom4*denom2      ! = 1/6 ''
     ENDDO
-
 
    END SUBROUTINE Sub_cal_weights 
 

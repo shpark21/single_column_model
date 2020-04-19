@@ -6,34 +6,44 @@ MODULE Mod_global
   INTEGER :: it, iz   !! do parameter
 
     !! for namelist val
-  INTEGER            :: nt,                 &
+  INTEGER            :: integrated_time,    &
                         nz,                 &
-                        dt,                 &
+                        input_nz,           &
                         ionum,              &
                         output_interval
 
   INTEGER            :: dyn_option,         &
-                        dz_option
+                        dz_option,          &
+                        dist_option,        &
+                        drop_column_num,    &
+                        drop_1st_diameter
 
-  REAL               :: z_top
+  REAL               :: z_top,              &
+                        drop_ratio,         &
+                        gamma_dry,          &
+                        dzr
+  INTEGER            :: aaa,bbb,ccc,ddd
 
-  REAL               :: gamma_dry
-
-  REAL               :: dzr
-
-  CHARACTER(LEN=256) :: output_path, &
+  CHARACTER(LEN=256) ::     in_path, & 
+                          t_in_name, &
+                          q_in_name, &
+                          w_in_name, &
+                          z_in_name, &
+                        output_path, &
                         output_name
 
     ! Declare variables 
-    INTEGER                           :: varid
+  INTEGER                               :: nt, dt
+  INTEGER                               :: varid
   TYPE varinfo
-    INTEGER                           :: varid
-    REAL, DIMENSION(:),   ALLOCATABLE :: dz, next_dz,      &
-                                         dt,               &
-                                         sfc_dt, top_dt  
-    REAL, DIMENSION(:,:), ALLOCATABLE :: dout        
-    CHARACTER(LEN=256)                :: vname, axis,      &
-                                         desc, units
+    INTEGER                             :: varid
+    REAL, DIMENSION(:),     ALLOCATABLE :: dz, next_dz,      &
+                                           stag_dz, dt,      &
+                                           sfc_dt, top_dt,   &
+                                           din 
+    REAL, DIMENSION(:,:),   ALLOCATABLE :: dout        
+    CHARACTER(LEN=256)                  :: vname, axis,      &
+                                           desc, units
   END TYPE varinfo
 
   TYPE(varinfo) ::    Temp,      & !! Temperature [K] 
@@ -64,29 +74,61 @@ MODULE Mod_global
   CONTAINS
 
   !!-----------------------------!!
-  SUBROUTINE Sub_allocate
+  SUBROUTINE Sub_allocate_dz
 
-    IF (.NOT. ALLOCATED(Temp%dz      )) ALLOCATE(Temp%dz        (nz))
-    IF (.NOT. ALLOCATED(Temp%sfc_dt  )) ALLOCATE(Temp%sfc_dt    (nt))
-    IF (.NOT. ALLOCATED(Temp%top_dt  )) ALLOCATE(Temp%top_dt    (nt))
-    IF (.NOT. ALLOCATED(Temp%next_dz )) ALLOCATE(Temp%next_dz   (nz))
-    IF (.NOT. ALLOCATED(Temp%dout    )) ALLOCATE(Temp%dout (nz,nt+1))
+    IF (.NOT. ALLOCATED(Temp%din     )) ALLOCATE(Temp%din    (input_nz))
+    IF (.NOT. ALLOCATED(Temp%dz      )) ALLOCATE(Temp%dz           (nz))
+    IF (.NOT. ALLOCATED(Temp%next_dz )) ALLOCATE(Temp%next_dz      (nz))
 
-    IF (.NOT. ALLOCATED(q%dz         )) ALLOCATE(q%dz           (nz))
-    IF (.NOT. ALLOCATED(q%sfc_dt     )) ALLOCATE(q%sfc_dt       (nt))
-    IF (.NOT. ALLOCATED(q%top_dt     )) ALLOCATE(q%top_dt       (nt))
-    IF (.NOT. ALLOCATED(q%next_dz    )) ALLOCATE(q%next_dz      (nz))
-    IF (.NOT. ALLOCATED(q%dout       )) ALLOCATE(q%dout    (nz,nt+1))
+    IF (.NOT. ALLOCATED(q%din        )) ALLOCATE(q%din       (input_nz))
+    IF (.NOT. ALLOCATED(q%dz         )) ALLOCATE(q%dz              (nz))
+    IF (.NOT. ALLOCATED(q%next_dz    )) ALLOCATE(q%next_dz         (nz))
 
-    IF (.NOT. ALLOCATED(w%dz         )) ALLOCATE(w%dz         (0:nz))
+    IF (.NOT. ALLOCATED(w%din        )) ALLOCATE(w%din       (input_nz))
+    IF (.NOT. ALLOCATED(w%dz         )) ALLOCATE(w%dz              (nz))
+    IF (.NOT. ALLOCATED(w%stag_dz    )) ALLOCATE(w%stag_dz       (0:nz))
 
-    IF (.NOT. ALLOCATED(dz%dz        )) ALLOCATE(dz%dz          (nz))
-    IF (.NOT. ALLOCATED(z%dz         )) ALLOCATE(z%dz           (nz))
+    IF (.NOT. ALLOCATED(z%din        )) ALLOCATE(z%din       (input_nz))
+    IF (.NOT. ALLOCATED(z%dz         )) ALLOCATE(z%dz              (nz))
 
-  END SUBROUTINE Sub_allocate
+    IF (.NOT. ALLOCATED(dz%dz        )) ALLOCATE(dz%dz             (nz))
+
+  END SUBROUTINE Sub_allocate_dz
  
   !!-----------------------------!!
+  SUBROUTINE Sub_allocate_dt
+
+    IF (.NOT. ALLOCATED(Temp%sfc_dt  )) ALLOCATE(Temp%sfc_dt       (nt))
+    IF (.NOT. ALLOCATED(Temp%top_dt  )) ALLOCATE(Temp%top_dt       (nt))
+    IF (.NOT. ALLOCATED(Temp%dout    )) ALLOCATE(Temp%dout    (nz,nt+1))
+
+    IF (.NOT. ALLOCATED(q%sfc_dt     )) ALLOCATE(q%sfc_dt          (nt))
+    IF (.NOT. ALLOCATED(q%top_dt     )) ALLOCATE(q%top_dt          (nt))
+    IF (.NOT. ALLOCATED(q%dout       )) ALLOCATE(q%dout       (nz,nt+1))
+
+  END SUBROUTINE Sub_allocate_dt
+
+  !!-----------------------------!!
   SUBROUTINE Sub_deallocate
+
+    DEALLOCATE(Temp%din      )
+    DEALLOCATE(Temp%dz       )
+    DEALLOCATE(Temp%next_dz  )
+    DEALLOCATE(q%din         )
+    DEALLOCATE(q%dz          )
+    DEALLOCATE(q%next_dz     )
+    DEALLOCATE(w%din         )
+    DEALLOCATE(w%dz          )
+    DEALLOCATE(z%din         )
+    DEALLOCATE(z%dz          )
+    DEALLOCATE(dz%dz         )
+    DEALLOCATE(Temp%sfc_dt   )
+    DEALLOCATE(Temp%top_dt   )
+    DEALLOCATE(Temp%dout     )
+    DEALLOCATE(q%sfc_dt      )
+    DEALLOCATE(q%top_dt      )
+    DEALLOCATE(q%dout        )
+
   END SUBROUTINE Sub_deallocate
 
   !!-----------------------------!!

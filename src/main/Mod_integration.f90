@@ -26,7 +26,7 @@ MODULE Mod_integration
                                  temp%top_dt(it),           &
                                  dz%dz, nz,                 &
                                  dt,                        &
-                                 w%dz,                      &
+                                 w%stag_dz,                 &
                                  temp%next_dz               &
                                                            )
 
@@ -34,7 +34,7 @@ MODULE Mod_integration
                                  q%top_dt(it),              &
                                  dz%dz, nz,                 &
                                  dt,                        &
-                                 w%dz,                      &
+                                 w%stag_dz,                 &
                                  q%next_dz                  & 
                                                            )
 
@@ -72,7 +72,7 @@ MODULE Mod_integration
                                  temp%top_dt(it),           &
                                  dz%dz, nz,                 &
                                  dt,                        &
-                                 w%dz,                      &
+                                 w%stag_dz,                 &
                                  temp%next_dz               &
                                                            )
   
@@ -80,7 +80,7 @@ MODULE Mod_integration
                                  q%top_dt(it),              &
                                  dz%dz, nz,                 &
                                  dt,                        &
-                                 w%dz,                      &
+                                 w%stag_dz,                 &
                                  q%next_dz                  & 
                                                            )
         IF (ALLOCATED(temp%dz)) DEALLOCATE(temp%dz)
@@ -120,14 +120,14 @@ MODULE Mod_integration
                                      temp%top_dt(it),           &
                                      dz%dz, nz,                 &
                                      dt,                        &
-                                     w%dz,                      &
+                                     w%stag_dz,                 &
                                      temp%next_dz               &
                                                                )
         CALL Sub_Finite_volume_PPM ( q%dz, q%sfc_dt(it),        &
                                      q%top_dt(it),              &
                                      dz%dz, nz,                 &
                                      dt,                        &
-                                     w%dz,                      &
+                                     w%stag_dz,                 &
                                      q%next_dz                  &
                                                                )
         IF (ALLOCATED(temp%dz)) DEALLOCATE(temp%dz)

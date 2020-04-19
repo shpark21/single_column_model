@@ -5,19 +5,66 @@ MODULE Mod_init
   IMPLICIT NONE
 
     CONTAINS
+    
+    SUBROUTINE Sub_init
 
-    ! SUBROUTINE Sub_Cal_P 
-    !   IF (it = 0) THEN 
-    !     CALL Sub_read_T
-    !     CALL Sub_read_qv
-    !   ELSE
-    !  
-    !     CALL hydrostatic_eq !! sub?? function?? need discussion    
-    !
-    !   ENDIF
-    ! END SUBROUTINE Sub_Cal_P 
+    IMPLICIT NONE
+
+      CALL Sub_allocate_dz
+      CALL Sub_set_grid
+
+      w%dz(1:49)=1.
+
+      w%dz(51:100)=-1.
+      CALL Sub_set_W ( nz , dz%dz , w%dz , w%stag_dz ) 
+
+      CALL Sub_set_dt
+      CALL Sub_allocate_dt
+
+      CALL Sub_set_T 
+      CALL Sub_Set_Q 
+
+    END SUBROUTINE Sub_init
+
 
     !!---------------------------------------------!!
+    !!  Cal. dt regared CFL condition              !!
+    !!---------------------------------------------!!
+    SUBROUTINE Sub_set_dt
+
+    IMPLICIT NONE
+
+      !Local
+      REAL, PARAMETER                  :: courant_number = 1.0
+      REAL, DIMENSION(:), ALLOCATABLE  :: CFL
+
+      ALLOCATE( CFL (nz) )
+      ! Courant-Friedrichs-Lewy condition
+      WHERE (w%dz /= 0.)
+          CFL = courant_number*(dz%dz/abs(w%dz))
+      ELSEWHERE
+          CFL = MAXVAL(CFL)
+      END WHERE
+      dt = INT(MINVAL(CFL))
+      nt = INT(integrated_time/dt)
+
+      IF ( nt*dt .ne. integrated_time ) then
+        write(*,*) "  "
+        write(*,*) "********WARMING"
+        write(*,*) "Calculated Total integrated time is different from the namelist integrated_time"
+        write(*,*) "Total integrated time     =  ", nt*dt
+        write(*,*) "Namelist integrated_time  =  ", integrated_time
+        write(*,*) "********"
+        write(*,*) "  "
+      ENDIF
+
+      write(*,*) "DT    =  ", dt
+      write(*,*) "NT    =  ", nt
+
+    END SUBROUTINE Sub_set_dt
+
+    !!---------------------------------------------!!
+    !!  Cal. vertical coordinate                   !!
     !!---------------------------------------------!!
     SUBROUTINE Sub_set_grid
 
@@ -42,8 +89,9 @@ MODULE Mod_init
     END SUBROUTINE Sub_set_grid
    
     !!---------------------------------------------!!
+    !!  Cal. Temperature                           !!
     !!---------------------------------------------!!
-    SUBROUTINE Sub_Set_T
+    SUBROUTINE Sub_set_T
 
       IMPLICIT NONE
 
@@ -65,34 +113,67 @@ MODULE Mod_init
         Temp%top_dt(it) = Temp%dz(nz)
       ENDDO !! time do
 
-    END SUBROUTINE Sub_Set_T
+    END SUBROUTINE Sub_set_T
 
     !!---------------------------------------------!!
+    !!  Cal. vertical wind                         !!
     !!---------------------------------------------!!
-    SUBROUTINE Sub_Cal_W
+    SUBROUTINE Sub_set_W ( nz , dz , grid_w , stag_w )
+
+      IMPLICIT NONE
+
+      !In
+      INTEGER,               INTENT(IN)   :: nz
+      REAL, DIMENSION(nz),   INTENT(IN)   :: dz 
+      REAL, DIMENSION(nz),   INTENT(IN)   :: grid_w
+      !Local
+      INTEGER                             :: iz
+      REAL                                :: wgt 
+      !Out
+      REAL, DIMENSION(nz+1), INTENT(OUT)  :: stag_w
+
+      ! Make stagged grid for advection
+      DO iz = 2, nz
+          wgt = dz(iz-1) / (dz(iz-1)+dz(iz))
+          stag_w(iz) = grid_w(iz-1) + wgt*(grid_w(iz)-grid_w(iz-1))
+      end do
+
+      ! Set Boundary Condition
+      ! most likely w = 0 at these points
+      stag_w(1) = 0.; stag_w(nz+1) = 0.     ! Homogeneous Dirichlet BC
+
+    END SUBROUTINE Sub_set_W  
+  
+    !!---------------------------------------------!!
+    !!  Cal. drop number                           !!
+    !!---------------------------------------------!!
+    SUBROUTINE Sub_set_Q
 
     IMPLICIT NONE
 
-      ! w%dz(0:nz-1) = 1.0 !! m/s
-      ! w%dz(nz)     = 0.0 !! m/s
-
-      w%dz(0:nz/2) = 1.0 !! m/s
-      w%dz(1+nz/2:nz)     = -1.0 !! m/s
-
-      !   SELECT CASE (W_opt)
+      ! aaa=70
+      ! ddd=90
       !
-      !     CASE ("linear")
-      !       CALL W_linear
-      !     CASE ("exp")
-      !       CALL W_exponantial
-      !     DEFAULT
-      !       CALL W_linear
+      ! bbb=aaa+10
+      ! ccc=ddd-10
+      ! q%dz(aaa:bbb)=100
       !
-      !   ENDSELECT !! about W_opt
+      ! DO iz = 1, 4
+      ! q%dz(aaa+iz:bbb-iz)=100.-real(iz)*20
+      ! q%dz(ccc+iz:ddd-iz)=100.-real(iz)*20
+      ! ENDDO
+      DO iz = 1, nz
+        q%dz(iz) = 100*sin(real(iz)) + 100.
+      ENDDO
 
-    END SUBROUTINE Sub_Cal_W  
-   
+      q%sfc_dt(:)=0.
+      q%top_dt(:)=0.
+
+    END SUBROUTINE Sub_set_Q  
+
+ 
     !!---------------------------------------------!!
+    !!  Set. size distributions                    !!
     !!---------------------------------------------!!
     SUBROUTINE Sub_drop_distributions     &
                (                          &
@@ -102,7 +183,7 @@ MODULE Mod_init
                 ratio,                    & !!  drop_ratio
                 nz,                       & 
                 nr,                       & !!  drop_num
-                conc                      & !!  drop_conc
+                conc                      & !!  zx op_conc
                )
 
     IMPLICIT NONE

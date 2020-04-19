@@ -1,22 +1,33 @@
 MODULE Mod_read  
 
+  USE NETCDF
   USE Mod_global
 
   IMPLICIT NONE
 
-  NAMELIST /Time_control/ dt,              &
-                          nt,              &
+  NAMELIST /Time_control/ integrated_time, &
                           output_interval 
 
-  NAMELIST /Domain      / nz,       &
+  NAMELIST /Domain      / input_nz, &
+                          nz,       &
                           z_top
 
-  NAMELIST /Options/ gamma_dry,     &
-                     dyn_option,    &
-                     dz_option,     &
-                     dzr
+  NAMELIST /Dyn_options/ gamma_dry,     &
+                         dyn_option,    &
+                         dz_option,     &
+                         dzr
 
-  NAMELIST /file_info/ output_path, &
+  NAMELIST /Phys_options/ dist_option,       &
+                          drop_column_num,   &
+                          drop_1st_diameter, &
+                          drop_ratio
+
+  NAMELIST /file_info/ in_path,     &
+                       t_in_name,   &
+                       q_in_name,   &
+                       w_in_name,   &
+                       z_in_name,   &
+                       output_path, &
                        output_name
 
 
@@ -34,34 +45,47 @@ MODULE Mod_read
 
       OPEN(10,FILE='./namelist.info', iostat=ionum)
 
-      IF ( ionum .ne. 0 ) CALL FAIL_MSG("error namelist")
+      IF ( ionum .ne. 0 ) CALL FAIL_MSG("CHECKor namelist")
       
-      READ(10, Time_control)
-      READ(10, Domain      )
-      READ(10, Options     )
-      READ(10, file_info   )
+      READ(10, Time_control )
+      READ(10, Domain       )
+      READ(10, Dyn_options  )
+      READ(10, Phys_options )
+      READ(10, file_info    )
 
     END SUBROUTINE Sub_read_namelist
 
-    !!---------------------------------------------!!
-    !!---Sub_name :                        --------!!
-    !!---Input var :                       --------!!
-    !!---Ouput var :                       --------!!
-    !!---What is that :                    --------!!
-    !!---------------------------------------------!!
-    SUBROUTINE Sub_read_T  
 
-    END SUBROUTINE Sub_read_T  
-   
-    !!---------------------------------------------!!
-    !!---Sub_name :                        --------!!
-    !!---Input var :                       --------!!
-    !!---Ouput var :                       --------!!
-    !!---What is that :                    --------!!
-    !!---------------------------------------------!!
-    SUBROUTINE Sub_read_qv   
+    SUBROUTINE Sub_read_netcdf ( var_in, in_path, in_name )
 
-    END SUBROUTINE Sub_read_qv   
+    IMPLICIT NONE
 
+    !In
+    REAL, DIMENSION(:),       INTENT(IN)   ::    var_in
+    CHARACTER(LEN=*),         INTENT(IN)   ::   in_path, &
+                                                in_name 
+    !Local
+    INTEGER :: ndims_in, nvars_in, ngatts_in, unlimdimid_in
+    INTEGER :: lev_varid, var_varid, varid, len, ncid
+    INTEGER :: nx, ny, ndim(4), nlon, nlat, nlev, ntime
+    character(len=20) :: dim_names(3), dim_name, &
+                         lon_units, lat_units, var_units, &
+                         lon_name, lat_name, time_name, time_units, &
+                         var_name
+
+
+    ! IF (.NOT. ALLOCATED( var%din) ) ALLOCATE( var%din (nz_in,lat_in,lon_in) ) 
+ 
+      CALL CHECK( nf90_create(trim(in_path)//"/"//trim(in_name),nf90_clobber,ncid) )
+      CALL SUCCESS_MSG("Open in data")
+  
+      CALL CHECK( NF90_INQUIRE(ncid, ndims_in, nvars_in, ngatts_in, unlimdimid_in) )
+         print*, ncid, ndims_in, nvars_in, ngatts_in, unlimdimid_in 
+
+      ! CALL CHECK( NF90_INQ_VARID(ncid, "level", lev_varid) )
+      ! CALL CHECK( NF90_INQ_VARID(ncid, "W",     var_varid) ) 
+
+
+    END SUBROUTINE Sub_read_netcdf
 
 END MODULE Mod_read  
