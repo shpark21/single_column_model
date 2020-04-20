@@ -19,8 +19,8 @@ MODULE Mod_read
 
   NAMELIST /Phys_options/ dist_option,       &
                           drop_column_num,   &
-                          drop_1st_diameter, &
-                          drop_ratio
+                          drop_min_diameter, &
+                          drop_max_diameter
 
   NAMELIST /file_info/ in_path,     &
                        t_in_name,   &

@@ -25,15 +25,14 @@ PROGRAM main_prog
     CALL Sub_Integration_PPM
   ENDIF
 
-  ! CALL Sub_drop_distributions (                     &
-  !                               dist_option,        &
-  !                               drop_column_num,    &
-  !                               drop_1st_diameter,  &
-  !                               drop_ratio,         &
-  !                               nz,                 &
-  !                               drop_num%dn,        &
-  !                               drop_conc%dz_dn     &
-  !                              )
+  
+  CALL Sub_drop_distributions (                    &
+                               dist_option,        &
+                               drop_column_num,    &
+                               drop_min_diameter,  &
+                               drop_max_diameter,  &
+                               drop%num(:,1)       &
+                              )
 
     ! open(unit = 20, file = "r.bin", status = "unknown", &
     !       form="unformatted",access="direct", recl=4*drop_column_num) 
