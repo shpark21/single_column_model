@@ -197,54 +197,65 @@ MODULE Mod_init
                            column_num,          &
                            nz                       
     REAL,    INTENT(IN) :: rmin,                &
-                           ratio
+                           rmax
     
     ! Local
     REAL, DIMENSION(column_num)              :: r,  &
-                                                m 
+                                                D 
     REAL, DIMENSION(column_num+1)            :: rb, &
-                                                mb, rr, dr
+                                                dr, rr, dD
     INTEGER                                  :: ir, nbin
-    REAL                                     :: rmax, &
-                                                pi,   &
-                                                r0, sigma, n0
+    REAL                                     :: ratio, &
+                                                nc,    &
+                                                qc,    &
+                                                pi,    &
+                                                rho,   &
+                                                r0, mu, sigma, lambda
     ! OUT
     REAL, DIMENSION(nz,column_num), INTENT(OUT) :: conc
     REAL, DIMENSION(column_num),    INTENT(OUT) :: nr
 
-    pi = 4*ATAN(1.)
-    nbin=column_num
-
-    rmax  = rmin*(ratio**nbin) 
+    nc = 1.0e8                              ! [# / m^3]
+    qc = 0.001                              ! [kg / kg]
+    pi = 4. * ATAN(1.)
+    
+    nbin = column_num
+    rmin = drop_1st_diameter                ! [m ; 1 um]
+    rmax = drop_last_diameter               ! [m ; 1 cm] 
+    ratio = (rb(nbin)/rb(1))**(1./nbin)
 
     rb(1) = rmin ; rb(nbin+1) = rmax        ! boundary of drop diameter
-    DO ir = 2, nbin                         ! |
-      rb(ir) = ratio*rb(ir-1)               ! V 
-    ENDDO                                   ! [um***3 => kg]    
-                                            ! boundary of mass
-    mb(:) = rb(:)**3                        ! |
-    DO ir = 1, nbin                         ! V  
-      m(ir)=(mb(ir)+mb(ir+1))/2.            ! mass 
+    DO ir = 2, nbin
+      rb(ir) = ratio*rb(ir-1)  
+    ENDDO
+    
+    DO ir = 1, nbin
+      r(ir) = (rb(ir)+rb(ir+1))/2.
       dr(ir) = rb(ir+1)-rb(ir)
-    ENDDO                                   ! |
-                                            ! V
-    r = m**(1./3.)                          ! drop diameter
-
-    do ir = 1, nbin
-    r(ir) = ir-1 
-    enddo
-
-    write(*,*) r
+    ENDDO
 
     SELECT CASE(distribution_option)
       CASE(1)
-      ! Fitting Log-normal distribution
-      r0    = 0. 
-      sigma = 1.
-      n0    = 1.
+      ! Log-normal distribution
+      r0 = 1.0e-5
+      mu = LOG(r0)
+      sigma = SQRT((2./9.)*LOG(qc/(nc*rho*(4./3.)*pi*(r0)^3)))
+      D = 2*r
+      dD = 2*dr
 
       DO ir = 1, nbin
-       nr(ir) = (N0/(SQRT(2*pi)*sigma*r(ir))) * EXP(((log(r(ir))-r0)**2)/(2.*(sigma**2))*-1.)
+       nr(ir) = (nc/((SQRT(2.*pi))*sig*r(ir)))*EXP((-1.*(LOG(r(ir))-mu)^2)/(2.*sig^2))
+      ENDDO
+
+      CASE(2)
+      ! Gamma distribution
+      mu = (1.0e9/nc) + 2.
+      lambda = ((nc/qc)*(GAMMA(mu+4.)/GAMMA(mu+1.))*pi*(4./3.)*rho)**(1./3.)
+      !n0 = (nc*lamb**(mu+1.))/GAMMA(mu+1.)
+
+      DO ir = 1, nbin
+       !nr(ir) = n0*r(ir)^mu*EXP(-1*lamb*r(ir))
+       nr(ir) = (nc/gamma(mu+1.))*lamb*(lamb*D(ir))^mu*exp(-1*lamb*D(ir))*dD(ir)
       ENDDO
     END SELECT
 
@@ -255,7 +266,7 @@ MODULE Mod_init
     ! write(*,*) sum(rr)
     ! write(*,*) maxval(nr)
 
-    conc(:,:)=0.
+    ! conc(:,:)=0.
     END SUBROUTINE Sub_drop_distributions 
 
     !!---------------------------------------------!!
