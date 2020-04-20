@@ -23,8 +23,8 @@
 &Phys_options
   dist_option        = 1           !! 1 : Log-nomal distribution, 2 : Gamma distribution
   drop_column_num    = 100         !! nbin 
-  drop_1st_diameter  = 1           !! unit = um
-  drop_ratio         = 1.10        !!
+  drop_1st_diameter  = 1.0e-6      !! unit = m
+  drop_last_diameter  = 0.01       !! unit = m
 /
 
 &file_info
