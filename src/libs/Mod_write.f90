@@ -100,7 +100,6 @@
         CALL CHECK( nf90_put_var(ncid, 2,     y) )
         CALL CHECK( nf90_put_var(ncid, 3, z_out) )
         CALL CHECK( nf90_put_var(ncid, 4,  date) )
-        CALL SUCCESS_MSG("dimension")
 
         CALL CHECK( nf90_put_var(ncid, 5, w_out, start=dim1_start, count=dim1_count) )
         CALL SUCCESS_MSG("w")

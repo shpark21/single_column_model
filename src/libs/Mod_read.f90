@@ -76,7 +76,7 @@ MODULE Mod_read
 
     ! IF (.NOT. ALLOCATED( var%din) ) ALLOCATE( var%din (nz_in,lat_in,lon_in) ) 
  
-      CALL CHECK( nf90_create(trim(in_path)//"/"//trim(in_name),nf90_clobber,ncid) )
+      CALL CHECK( nf90_open(trim(in_path)//"/"//trim(in_name),nf90_clobber,ncid) )
       CALL SUCCESS_MSG("Open in data")
   
       CALL CHECK( NF90_INQUIRE(ncid, ndims_in, nvars_in, ngatts_in, unlimdimid_in) )

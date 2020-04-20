@@ -1,6 +1,7 @@
 MODULE Mod_init
 
   USE Mod_global
+  USE Mod_const
 
   IMPLICIT NONE
 
@@ -14,8 +15,10 @@ MODULE Mod_init
       CALL Sub_set_grid
 
       w%dz(1:49)=1.
-
       w%dz(51:100)=-1.
+      ! DO iz = 1, nz
+      !   q%dz(iz) = sin(real(iz)) 
+      ! ENDDO
       CALL Sub_set_W ( nz , dz%dz , w%dz , w%stag_dz ) 
 
       CALL Sub_set_dt
@@ -41,9 +44,9 @@ MODULE Mod_init
       ALLOCATE( CFL (nz) )
       ! Courant-Friedrichs-Lewy condition
       WHERE (w%dz /= 0.)
-          CFL = courant_number*(dz%dz/abs(w%dz))
+        CFL = courant_number*(dz%dz/abs(w%dz))
       ELSEWHERE
-          CFL = MAXVAL(CFL)
+        CFL = MAXVAL(CFL)
       END WHERE
       dt = INT(MINVAL(CFL))
       nt = INT(integrated_time/dt)
@@ -58,8 +61,9 @@ MODULE Mod_init
         write(*,*) "  "
       ENDIF
 
-      write(*,*) "DT    =  ", dt
-      write(*,*) "NT    =  ", nt
+      write(*,*) "dt =  ", dt
+      write(*,*) "nt =  ", nt
+      write(*,*) "  "
 
     END SUBROUTINE Sub_set_dt
 

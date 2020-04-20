@@ -2,6 +2,7 @@ PROGRAM main_prog
 
   USE NETCDF
   USE Mod_global
+  USE Mod_const
   USE Mod_read
   USE Mod_init
   USE Mod_dyn_driver    
@@ -12,7 +13,7 @@ PROGRAM main_prog
   IMPLICIT NONE
 
   CALL Sub_read_namelist
-  CALL Sub_read_netcdf( q%din, in_path, q_in_name ) 
+  CALL Sub_read_netcdf( w%din, in_path, w_in_name ) 
 
   CALL Sub_init
 
@@ -39,8 +40,8 @@ PROGRAM main_prog
     !
     ! write(20,rec=1) drop_num%dn(:)
 
-   write(*,*) sum(q%dout(:,2))
-   write(*,*) sum(q%dout(:,nt))
+   write(*,*) "it =            2", " total Q =",  sum(q%dout(:,2))
+   write(*,*) "it = ",         nt,  "total Q =", sum(q%dout(:,nt))
 
   CALL Sub_write_netcdf ( nz, nt, dz%dz, z%dz,      &
                           temp%dout, q%dout,        &
