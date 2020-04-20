@@ -15,13 +15,15 @@ MODULE Mod_global
   INTEGER            :: dyn_option,         &
                         dz_option,          &
                         dist_option,        &
-                        drop_column_num,    &
-                        drop_1st_diameter
 
   REAL               :: z_top,              &
                         drop_ratio,         &
                         gamma_dry,          &
-                        dzr
+                        dzr,                &
+                        drop_column_num,    &
+                        drop_1st_diameter,  &
+                        drop_last_diameter
+
   INTEGER            :: aaa,bbb,ccc,ddd
 
   CHARACTER(LEN=256) ::     in_path, & 
