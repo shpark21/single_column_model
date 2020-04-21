@@ -1,40 +1,42 @@
 MODULE Mod_read  
 
+
+  USE NETCDF
   USE Mod_global
-  USE netcdf     
 
   IMPLICIT NONE
 
-  NAMELIST /Time_control/ dt,              &
-                          nt,              &
+  NAMELIST /Time_control/ integrated_time, &
                           output_interval 
 
-  NAMELIST /Domain      / nz,       &
+  NAMELIST /Domain      / input_nz, &
+                          nz,       &
                           z_top
 
-  NAMELIST /Dyn_Options/ gamma_dry,     &
+  NAMELIST /Dyn_options/ gamma_dry,     &
+
                          dyn_option,    &
                          dz_option,     &
                          dzr
 
-  NAMELIST /Phys_options/ dist_option,      &
-                          drop_column_num,  &
-                          drop_1st_diameter,&
-                          drop_ratio,       &
-                          Nc,               &
-                          qc
+  NAMELIST /Phys_options/ dist_option,       &
+                          drop_column_num,   &
+                          drop_min_diameter, &
+                          drop_max_diameter
 
-  NAMELIST /file_info/ output_path, &
+  NAMELIST /file_info/ in_path,     &
+                       t_in_name,   &
+                       q_in_name,   &
+                       w_in_name,   &
+                       z_in_name,   &
+                       output_path, &
                        output_name
 
 
     CONTAINS
 
- !!---------------------------------------------!!
+      !!---------------------------------------------!!
       !!---Sub_name : Sub_read_namelist      --------!!
-      !!---Input var : Global vars           --------!!
-      !!---Ouput var : Global vars           --------!!
-      !!---What is that : For reading namelist ------!!
       !!---------------------------------------------!!
     SUBROUTINE Sub_read_namelist
 
@@ -54,9 +56,6 @@ MODULE Mod_read
 
     !!---------------------------------------------!!
     !!---Sub_name :                        --------!!
-    !!---Input var :                       --------!!
-    !!---Ouput var :                       --------!!
-    !!---What is that :                    --------!!
     !!---------------------------------------------!!
     SUBROUTINE Sub_read_NC_file(infile, out_var, lat_iy, lon_ix)
 
@@ -79,6 +78,7 @@ MODULE Mod_read
       IF (ALLOCATED(out_var)) DEALLOCATE(out_var)
 
       CALL check(nf90_open(infile, nf90_nowrite, ncid))
+      CALL SUCCESS_MSG("Open input")
       CALL check(nf90_inquire_dimension(ncid, 1, tname, nt))
       CALL check(nf90_inquire_dimension(ncid, 2, zname, nz))
       CALL check(nf90_inquire_dimension(ncid, 3, xname, nx))
@@ -101,17 +101,6 @@ MODULE Mod_read
 
       out_var(:) = var(1,1,:,1)
 
-    END SUBROUTINE Sub_read_NC_file
-   
-    !!---------------------------------------------!!
-    !!---Sub_name :                        --------!!
-    !!---Input var :                       --------!!
-    !!---Ouput var :                       --------!!
-    !!---What is that :                    --------!!
-    !!---------------------------------------------!!
-    SUBROUTINE Sub_read_qv   
-
     END SUBROUTINE Sub_read_qv   
-
 
 END MODULE Mod_read  
