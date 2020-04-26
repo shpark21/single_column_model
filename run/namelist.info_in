@@ -6,15 +6,14 @@
   input_nz        = 37
   read_pres       = 2           !! 1 : read pressure, 2 : read geopotential-height
   read_psfc       = 2           !! 1 : using psfc form input.
-                                !! if not, using psfc form constant value 
+                                !! if not, using psfc form constant value
                                 !! in model.(Ps = 1013.)
 
   ! selet lat., lon.
-  slon            = 459 
-  elon            = 460 
-  slat            = 188 
-  elat            = 186 
-
+  slon            = @slon@ 
+  elon            = @elon@ 
+  slat            = @slat@ 
+  elat            = @elat@ 
   nz              = 100          !! unit = number of vertical layer
   z_top           = 10000.0      !! unit = m
 /
