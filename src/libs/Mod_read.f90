@@ -9,8 +9,14 @@ MODULE Mod_read
   NAMELIST /Time_control/ integrated_time, &
                           output_interval 
 
-  NAMELIST /Domain      / input_nz, &
-                          nz,       &
+  NAMELIST /Domain      / input_nz,  &
+                          nz,        &
+                          slon,      &
+                          elon,      &
+                          slat,      &
+                          elat,      &
+                          read_pres, &
+                          read_psfc, &
                           z_top
 
   NAMELIST /Dyn_options/ gamma_dry,     &
@@ -57,27 +63,33 @@ MODULE Mod_read
     !!---------------------------------------------!!
     !!---Sub_name :                        --------!!
     !!---------------------------------------------!!
-    SUBROUTINE Sub_read_NC_file(infile, out_var, lat_iy, lon_ix)
+    SUBROUTINE Sub_read_NC_file( inpath, inname, &
+                                        out_var, &
+                                  slat,    elat, &
+                                  slon,    elon   )
+
 
       IMPLICIT NONE
-      CHARACTER(LEN=*), INTENT(IN)                   :: infile
-      REAL, INTENT(IN)                               :: lat_iy, &
-                                                        lon_ix
+      CHARACTER(LEN=*),                INTENT(IN)    :: inpath, inname
+      INTEGER,                         INTENT(IN)    :: slat, elat, &
+                                                        slon, elon     
+                                                        
       REAL, ALLOCATABLE, DIMENSION(:), INTENT(INOUT) :: out_var
 
       !! for reading nc file
-      INTEGER               :: ncid
+      INTEGER               :: ncid, i
       CHARACTER(LEN=50)     :: zname, xname, yname, tname, vname
       INTEGER               :: nz, nx, ny, nt
       INTEGER, DIMENSION(4) :: dim_count, dim_start 
       INTEGER, DIMENSION(4) :: dimids
-      INTEGER               :: xtype,ndims 
+      INTEGER               :: xtype,ndims,   &
+                               ynum, xnum  
 
-      REAL, ALLOCATABLE, DIMENSION(:,:,:,:) :: var
+      REAL, ALLOCATABLE, DIMENSION(:,:,:,:) :: var_area
      
       IF (ALLOCATED(out_var)) DEALLOCATE(out_var)
 
-      CALL check(nf90_open(infile, nf90_nowrite, ncid))
+      CALL check(nf90_open(TRIM(inpath)//TRIM(inname), nf90_nowrite, ncid))
       CALL SUCCESS_MSG("Open input")
       CALL check(nf90_inquire_dimension(ncid, 1, tname, nt))
       CALL check(nf90_inquire_dimension(ncid, 2, zname, nz))
@@ -85,22 +97,27 @@ MODULE Mod_read
       CALL check(nf90_inquire_dimension(ncid, 4, yname, ny))
 
       !!!!-----------------------------  var(ny, nx, nz, nt)
-      IF (.NOT. ALLOCATED(var)) ALLOCATE(var (1 , 1 , nz, 1 ))
-      IF (.NOT. ALLOCATED(out_var)) ALLOCATE(out_var (nz))
+      IF ( elat .lt. slat )  ynum = slat-elat ; dim_start =(/ elat  , slon    , 1 , 8 /)
+      IF ( elat .gt. slat )  ynum = elat-slat ; dim_start =(/ slat  , slon    , 1 , 8 /)
+      xnum = elon - slon
 
+      dim_count =(/ ynum  , xnum    , nz , 1 /)
 
-      dim_count =(/  1    ,   1    , nz, 1 /)
-      dim_start =(/lat_iy , lon_ix , 1 , 1 /)
+      IF (.NOT. ALLOCATED(var_area)) ALLOCATE(var_area (ynum , xnum , nz, 1 ))
+      IF (.NOT. ALLOCATED(out_var))  ALLOCATE(out_var (nz))
 
-!      CALL check(nf90_inq_varid(ncid, 'W'  , varid))
-!      CALL check(nf90_get_var(ncid, 5, var(1,1,:,:),start=dim_start, count=dim_count))
+      ! dim_count =(/  1    ,   1    , nz, 1 /)
+      ! dim_start =(/lat_iy , lon_ix , 1 , 1 /)
 
       CALL check(nf90_inquire_variable(ncid,1,vname,xtype,ndims,dimids))
       CALL check(nf90_inq_varid(ncid, vname ,varid))
-      CALL check(nf90_get_var(ncid,varid,var,start=dim_start, count=dim_count))
+      CALL check(nf90_get_var(ncid,varid,var_area,start=dim_start, count=dim_count))
 
-      out_var(:) = var(1,1,:,1)
+      DO i = 1, nz
+        out_var(i) = sum(var_area(:,:,nz+1-i,1))/(ynum*xnum)
+      ENDDO
+      ! out_var(:) = var(1,1,:,1)
 
-    END SUBROUTINE Sub_read_qv   
+    END SUBROUTINE Sub_read_NC_file 
 
 END MODULE Mod_read  

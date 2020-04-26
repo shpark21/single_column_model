@@ -12,6 +12,13 @@ MODULE Mod_global
                         ionum,              &
                         output_interval
 
+  INTEGER            :: read_psfc,     &
+                        read_pres        
+  INTEGER            :: slon,     &
+                        elon,     &
+                        slat,     &
+                        elat
+
   INTEGER            :: dyn_option,         &
                         dz_option,          &
                         dist_option,        &

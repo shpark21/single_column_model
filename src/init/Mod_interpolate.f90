@@ -12,107 +12,62 @@ MODULE Mod_intepolate
     !!---------------------------------------------!!
     SUBROUTINE Sub_set_grid
 
+    USE Mod_const, only: Ps, R, g
     IMPLICIT NONE
+      REAL, DIMENSION(in_nz), INTENT(in) :: z_in,    &
+                                            z_conv,  &   
+                                            temp_in, &
+                                            qv_in
 
-      ! Cal. dz      
-      IF ( dz_option .eq. 1) THEN
-        dz%dz(:) = z_top/nz
-      ELSE IF ( dz_option .eq. 2) THEN
-        dz%dz(1) = ((dzr-1)*z_top)/((dzr**nz)-1) 
-        DO iz = 2, nz
-          dz%dz(iz) = dz%dz(iz-1)*dzr
-        ENDDO !! z
-      ENDIF
+      ! read_psfc = 1 : using psfc form input.
+      ! if not, using psfc form constant value in model.(Ps = 1013.)
+      if (read_psfc = 1) Ps = Psfc
 
-      ! Cal. height     
-      z%dz(1)= dz%dz(1)
-      DO iz = 2, nz
-        z%dz(iz)= z%dz(iz-1) + dz%dz(iz)
-      ENDDO
+      if ( read_pres == 1 ) then
+          Tv = temp_in*(1+(0.61*qv_in))
+          H = (R*Tv)/g
+          z_in = -H*(log(z_in/Ps))
+      if ( read_pres == 2 ) then
+          z_in = vert_in/g
+      endif
+
+    if ( temp_var == 'theta' ) then
+        if ( vert_var == 'p' ) then
+            T_in = temp_in*((vert_in/Ps)**(R/Cp))
+        else
+            print*, " :: Without air pressure information,"
+            print*, " ::  'Temp' can't be calculated from 'theta'."
+            print*, " :: Please Check the 'vertical variable'."
+        endif
+    else
+        T_in = temp_in
+    endif
+
+!!!!! :: Interpolate to fit nz
+    do i = 1, nz
+        do j = 1, nlev
+            if ( z_in(j) <= z_full(i) .and. z_full(i) <= z_in(j+1) ) then
+                d1 = z_full(i) - z_in(j)
+                d2 = z_in(j+1) - z_full(i)
+                z_out(i)  =  z_in(j)*(d2/(d1+d2)) +  z_in(j+1)*(d1/(d1+d2))
+                w_out(i)  =  w_in(j)*(d2/(d1+d2)) +  w_in(j+1)*(d1/(d1+d2))
+                T_out(i)  =  T_in(j)*(d2/(d1+d2)) +  T_in(j+1)*(d1/(d1+d2))
+                qv_out(i) = qv_in(j)*(d2/(d1+d2)) + qv_in(j+1)*(d1/(d1+d2))
+            endif
+        enddo
+        ! print*, 'i : ', i, 'z_out : ', z_out(i), 'T_out : ', T_out(i),  'Q_out : ', qv_out(i)
+    enddo
 
     END SUBROUTINE Sub_set_grid
    
-    !!---------------------------------------------!!
-    !!  Cal. Temperature                           !!
-    !!---------------------------------------------!!
-    SUBROUTINE Sub_set_T
-
-      IMPLICIT NONE
-
-      !! boundary condition
-      DO it = 1, nt
-        Temp%sfc_dt(it) = 20. + 273.5
-      ENDDO !! time do
-
-      !! initial  condition
-      DO iz = 1, nz
-        IF (iz .EQ. 1) THEN
-          Temp%dz(iz) = Temp%sfc_dt(1) - gamma_dry * dz%dz(iz)
-        ELSE
-          Temp%dz(iz) = Temp%dz(iz-1) - gamma_dry * dz%dz(iz)
-        ENDIF !! iz = 1 & others
-      ENDDO !! Temp from 1 to nz
-
-      DO it = 1, nt
-        Temp%top_dt(it) = Temp%dz(nz)
-      ENDDO !! time do
-
-    END SUBROUTINE Sub_set_T
-
-    !!---------------------------------------------!!
-    !!  Cal. vertical wind                         !!
-    !!---------------------------------------------!!
-    SUBROUTINE Sub_set_W ( nz , dz , grid_w , stag_w )
-
-      IMPLICIT NONE
-
-      !In
-      INTEGER,               INTENT(IN)   :: nz
-      REAL, DIMENSION(nz),   INTENT(IN)   :: dz 
-      REAL, DIMENSION(nz),   INTENT(IN)   :: grid_w
-      !Local
-      INTEGER                             :: iz
-      REAL                                :: wgt 
-      !Out
-      REAL, DIMENSION(nz+1), INTENT(OUT)  :: stag_w
-
-      ! Make stagged grid for advection
-      DO iz = 2, nz
-          wgt = dz(iz-1) / (dz(iz-1)+dz(iz))
-          stag_w(iz) = grid_w(iz-1) + wgt*(grid_w(iz)-grid_w(iz-1))
-      end do
-
-      ! Set Boundary Condition
-      ! most likely w = 0 at these points
-      stag_w(1) = 0.; stag_w(nz+1) = 0.     ! Homogeneous Dirichlet BC
-
-    END SUBROUTINE Sub_set_W  
-  
-    !!---------------------------------------------!!
-    !!  Cal. drop number                           !!
-    !!---------------------------------------------!!
-    SUBROUTINE Sub_set_Q
-
-    IMPLICIT NONE
-
-      ! aaa=70
-      ! ddd=90
-      !
-      ! bbb=aaa+10
-      ! ccc=ddd-10
-      ! q%dz(aaa:bbb)=100
-      !
-      ! DO iz = 1, 4
-      ! q%dz(aaa+iz:bbb-iz)=100.-real(iz)*20
-      ! q%dz(ccc+iz:ddd-iz)=100.-real(iz)*20
-      ! ENDDO
-      DO iz = 1, nz
-        q%dz(iz) = 100*sin(real(iz)) + 100.
-      ENDDO
-
-      q%sfc_dt(:)=0.
-      q%top_dt(:)=0.
-
-    END SUBROUTINE Sub_set_Q  
-
 END MODULE Mod_interpolate
+
+
+
+
+    
+
+
+
+
+    

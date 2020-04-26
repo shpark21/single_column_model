@@ -13,9 +13,32 @@ PROGRAM main_prog
   IMPLICIT NONE
 
   CALL Sub_read_namelist
-  CALL Sub_read_netcdf( w%din, in_path, w_in_name ) 
+  CALL Sub_allocate_dz
+  CALL Sub_set_grid
 
-  CALL Sub_init
+  CALL Sub_read_NC_file( in_path, z_in_name, &
+                                      z%din, &
+                            slat,      elat, &
+                            slon,      elon   )
+  CALL Sub_read_NC_file( in_path, t_in_name, &
+                                   temp%din, &
+                            slat,      elat, &
+                            slon,      elon   )
+  CALL Sub_read_NC_file( in_path, q_in_name, &
+                                      q%din, &
+                            slat,      elat, &
+                            slon,      elon   )
+  w%dz(1:49)=1.
+  w%dz(51:100)=-1.
+
+  CALL Sub_set_W ( nz , dz%dz , w%dz , w%stag_dz )
+  CALL Sub_set_dt
+  CALL Sub_allocate_dt
+  CALL Sub_set_T
+  CALL Sub_Set_Q
+
+
+
 
   IF (dyn_option .eq. 1) THEN
     CALL Sub_Integration_FD

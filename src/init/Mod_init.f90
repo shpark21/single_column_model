@@ -2,34 +2,12 @@ MODULE Mod_init
 
   USE Mod_global
   USE Mod_const
+  USE Mod_read, only: Sub_read_NC_file
 
   IMPLICIT NONE
 
     CONTAINS
     
-    SUBROUTINE Sub_init
-
-    IMPLICIT NONE
-
-      CALL Sub_allocate_dz
-      CALL Sub_set_grid
-
-      w%dz(1:49)=1.
-      w%dz(51:100)=-1.
-      ! DO iz = 1, nz
-      !   q%dz(iz) = sin(real(iz)) 
-      ! ENDDO
-      CALL Sub_set_W ( nz , dz%dz , w%dz , w%stag_dz ) 
-
-      CALL Sub_set_dt
-      CALL Sub_allocate_dt
-
-      CALL Sub_set_T 
-      CALL Sub_Set_Q 
-
-    END SUBROUTINE Sub_init
-
-
     !!---------------------------------------------!!
     !!  Cal. dt regared CFL condition              !!
     !!---------------------------------------------!!
