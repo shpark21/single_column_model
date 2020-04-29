@@ -43,9 +43,20 @@ integrated_time = 600
     dz_opt   = 2    ; 1) arithmetic progression     2) geometric sequence
 
 
-    draw_opt = 8    ; 1) X Axis : N     2) X Axis : N       3) X Axis : N        4) X Axis : r  5) X Axis : r       6) X Axis : r        7) X Axis : r      8) X Axis : r
-                    ;    Y Axis : m        Y Axis : dm/dr      Y Axis : dm/dlnr     Y Axis : N     Y Axis : n * dr     Y Axis : dN/dlnr     Y Axis : dN/dr     Y Axis : dm/dlnr
+    draw_opt = 1    ; 1) X Axis : N     2) X Axis : N       3) X Axis : N        4) X Axis : r 
+                    ;    Y Axis : m        Y Axis : dm/dr      Y Axis : dm/dlnr     Y Axis : N 
                                        ; Do not work!!      ; Do not work!!
+
+                    ; 5) X Axis : r     6) X Axis : r       7) X Axis : r        8) X Axis : r
+                    ;    Y Axis : n * dr   Y Axis : dN/dlnr    Y Axis : dN/dr       Y Axis : dm/dlnr
+
+                    
+                    ; 9) X Axis : t
+                    ;    Y Axis : r
+                    
+
+
+
 
 ;-------------------------------- Calculate radius of droplet -------------------------------
 
@@ -78,6 +89,9 @@ ratio   = ( rbmax / rbmin )^(1. / (nbin-1) )
      dlnr(ir)   = ( log(rb(ir+1)) - log(rb(ir)) )
 
     end do
+
+
+
 
 
 
@@ -215,7 +229,7 @@ es      = new( (/nt, n_nr/) , "double" )
 dm      = new( (/nt, n_nr/) , "double" )
 
 mass    = new( n_nr, "double" ) 
-mass    = r^3
+mass    = rho * 4. / 3. * pi * r^3
 
 m_dm      = new( (/nt+1, n_nr/) , "double" )
 m_dm(0,:) = mass
@@ -239,11 +253,11 @@ dm_dlnr = new( (/nt, n_nr/) , "double" )
 
         if ( draw_opt .eq. 1 ) then
 
-                wks   = gsn_open_wks("x11", "m_dm_0")
+                wks   = gsn_open_wks("png", "m_dm_0")
 
                 res@gsnLeftString  = "time : 0"
-                res@trYMaxF        = 1e-6
-                res@trYMinF        = 1e-18
+                res@trYMaxF        = 1e-9
+                res@trYMinF        = 1e-14
 ;                res@trXMaxF        = 1.4e7
                 res@trYLog         = True
 ;                res@trXLog         = True
@@ -253,7 +267,7 @@ dm_dlnr = new( (/nt, n_nr/) , "double" )
 ;                res@xyComputeXMin  = True
 ;                res@xyComputeYMin  = True
 
-;                p   = gsn_csm_xy( wks, nr, m_dm(0,:), res )
+                p   = gsn_csm_xy( wks, nr, m_dm(0,:), res )
 
 
         do tim   =   0, nt-1
@@ -264,9 +278,7 @@ dm_dlnr = new( (/nt, n_nr/) , "double" )
                    es(tim, ra)    = 611.2*exp( (17.67 * Tc ) / (  Tc  + 243.5 ) )  ; saturated water vapor pressure  
                                                                                     ; es [Pa] , Tc [C] 
 
-                   dm(tim, ra)    = 4. * pi * r(ra) * 1.  / ( ( ( Rv * T )  / ( Dv * es(tim,ra) ) ) + \
-                                                                                             \
-                                         ( L / ( Ka * T ) ) ) * S * dt      ; dm@units = "m-2 s-1"\
+                   dm(tim, ra)    = 4. * pi * r(ra) * 1.  / ( ( ( Rv * T )  / ( Dv * es(tim,ra) ) ) + ( ( L / ( Rv * T ) -1 ) * ( L / ( Ka * T ) ) ) ) * S * dt      ; dm@units = "m-2 s-1"\
 
         
                    m_dm(tim+1,ra)     = m_dm(tim,ra) + dm(tim, ra)
@@ -274,13 +286,13 @@ dm_dlnr = new( (/nt, n_nr/) , "double" )
 
                 end do
 
-                      wks   = gsn_open_wks("x11", "m_dm_"+(tim+1) )
+                      wks   = gsn_open_wks("png", "m_dm_"+(tim+1) )
 
                       res@gsnLeftString  = "time : "+(tim+1)
-                      res@trYMaxF        = 1e-6
-                      res@trYMinF        = 1e-18
+                      res@trYMaxF        = 1e-9
+                      res@trYMinF        = 1e-14
 ;                      res@trXMaxF        = 1.4e7
-                     res@trYLog         = True
+                      res@trYLog         = True
 ;                     res@trXLog         = True
                       res@tiYAxisString  = "m ( logscale ) "
                       res@tiXAxisString  = "N "
@@ -288,10 +300,8 @@ dm_dlnr = new( (/nt, n_nr/) , "double" )
 ;                      res@xyComputeXMin  = True
 ;                      res@xyComputeYMin  = True
 
-            print(dm(0,:))
- 
-exit   
-;                p   = gsn_csm_xy( wks, nr, m_dm(tim+1,:), res )
+   
+                p   = gsn_csm_xy( wks, nr, m_dm(tim+1,:), res )
 ;                p   = gsn_csm_xy( wks, dm(0,:), nr, res )
 
 
@@ -311,10 +321,7 @@ exit
                 es(tim, ra)    = 611.2*exp( (17.67 * Tc ) / (  Tc  + 243.5 ) )  ; saturated water vapor pressure  
                                                                             ; es [Pa] , Tc [C] 
 
-                dm(tim, ra)    = 4. * pi * r(ra) * 1.  / ( ( ( Rv * T )  / ( Dv * es(tim,ra) ) ) + \
-                                                                                             \
-                                         ( L / ( Ka * T ) ) ) * S * dt      ; dm@units = "m-2 s-1"\
-
+                   dm(tim, ra)    = 4. * pi * r(ra) * 1.  / ( ( ( Rv * T )  / ( Dv * es(tim,ra) ) ) + ( ( L / ( Rv * T ) -1 ) * ( L / ( Ka * T ) ) ) ) * S * dt      ; dm@units = "m-2 s-1"\
 
 
                 m_dm(tim+1,ra)     = m_dm(tim,ra) + dm(tim, ra)
