@@ -24,7 +24,7 @@ MODULE Mod_integration
 
         CALL Sub_Finite_volume ( temp%dz, temp%sfc_dt(it),  &
                                  temp%top_dt(it),           &
-                                 dz%dz, nz,                 &
+                                 dz%dz, nz, CFL%dz,         &
                                  dt,                        &
                                  w%stag_dz,                 &
                                  temp%next_dz               &
@@ -32,7 +32,7 @@ MODULE Mod_integration
 
         CALL Sub_Finite_volume ( q%dz, q%sfc_dt(it),        &
                                  q%top_dt(it),              &
-                                 dz%dz, nz,                 &
+                                 dz%dz, nz, CFL%dz,         &
                                  dt,                        &
                                  w%stag_dz,                 &
                                  q%next_dz                  & 
@@ -49,8 +49,9 @@ MODULE Mod_integration
         temp%dout(:,it+1)=temp%next_dz(:)
         q%dout(:,it+1)=q%next_dz(:)
 
-        ! CALL Sub_Cal_P
-        ! CALL Sub_Cal_W
+        ! write(*,*) "variable"
+        ! write(*,*) temp%dz
+        ! IF ( it == 2 )  stop
         !!CALL cloud_pysics
       ENDDO !! time do
 
@@ -118,14 +119,14 @@ MODULE Mod_integration
 
         CALL Sub_Finite_volume_PPM ( temp%dz, temp%sfc_dt(it),  &
                                      temp%top_dt(it),           &
-                                     dz%dz, nz,                 &
+                                     dz%dz, nz, CFL%dz,         &
                                      dt,                        &
                                      w%stag_dz,                 &
                                      temp%next_dz               &
                                                                )
         CALL Sub_Finite_volume_PPM ( q%dz, q%sfc_dt(it),        &
                                      q%top_dt(it),              &
-                                     dz%dz, nz,                 &
+                                     dz%dz, nz, CFL%dz,         &
                                      dt,                        &
                                      w%stag_dz,                 &
                                      q%next_dz                  &

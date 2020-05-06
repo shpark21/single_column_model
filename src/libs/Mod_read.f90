@@ -9,6 +9,11 @@ MODULE Mod_read
   NAMELIST /Time_control/ integrated_time, &
                           output_interval 
 
+  NAMELIST /var_info    / incase,    &
+                          read_pres, &
+                          read_temp, &
+                          read_psfc
+
   NAMELIST /Domain      / input_nz,  &
                           nz,        &
                           slon,      &
@@ -53,6 +58,7 @@ MODULE Mod_read
       IF ( ionum .ne. 0 ) CALL FAIL_MSG("error namelist")
       
       READ(10, Time_control)
+      READ(10, var_info    )
       READ(10, Domain      )
       READ(10, Dyn_options )
       READ(10, Phys_options)

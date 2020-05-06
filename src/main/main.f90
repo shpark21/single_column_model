@@ -4,7 +4,7 @@ PROGRAM main_prog
   USE Mod_global
   USE Mod_const
   USE Mod_read
-  USE Mod_init
+  USE Mod_init_driver
   USE Mod_dyn_driver    
   USE Mod_phys_driver    
   USE Mod_integration
@@ -28,18 +28,10 @@ PROGRAM main_prog
                                       q%din, &
                             slat,      elat, &
                             slon,      elon   )
-  w%dz(1:49)=1.
-  w%dz(51:100)=-1.
+  CALL Sub_init_vars
 
-  CALL Sub_set_W ( nz , dz%dz , w%dz , w%stag_dz )
-  CALL Sub_set_dt
-  CALL Sub_allocate_dt
-  CALL Sub_set_T
-  CALL Sub_Set_Q
-
-
-
-
+  temp%dz(:) = 0.
+  temp%dz(2:10) = 100.
   IF (dyn_option .eq. 1) THEN
     CALL Sub_Integration_FD
   ELSE IF (dyn_option .eq. 2) THEN
@@ -48,7 +40,6 @@ PROGRAM main_prog
     CALL Sub_Integration_PPM
   ENDIF
 
-  
   CALL Sub_drop_distributions (                    &
                                dist_option,        &
                                drop_column_num,    &
@@ -71,6 +62,6 @@ PROGRAM main_prog
                           output_path, output_name )     
 
 
-  CALL Sub_deallocate 
+  ! CALL Sub_deallocate 
 
 END PROGRAM main_prog

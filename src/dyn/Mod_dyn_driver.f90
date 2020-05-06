@@ -61,7 +61,7 @@ MODULE Mod_dyn_driver
              (                    &
                var, sfc_var,      &
                top_var,           &
-               dz, nz,            &
+               dz, nz, CFL,       &
                dt,                &
                w,                 &
                next_var           &
@@ -74,7 +74,8 @@ MODULE Mod_dyn_driver
     REAL,                       INTENT(IN)    :: sfc_var
     REAL,                       INTENT(IN)    :: top_var
     REAL,    DIMENSION(nz),     INTENT(IN)    :: var,     &
-                                                 dz
+                                                 dz,      &
+                                                 CFL
     REAL,    DIMENSION(1:nz+1), INTENT(IN)    :: w
     ! Local
     INTEGER                                   :: i
@@ -85,12 +86,20 @@ MODULE Mod_dyn_driver
     ! OUT
     REAL,    DIMENSION(nz),     INTENT(OUT)   :: next_var
 
-    ! Do outflow B.C 
-    flux(1)   = w(1)*var(1)       
-    flux(nz+1) = w(nz+1)*var(nz)
+    flux=0.0
+    ! Do outflow B.C
+    CALL Sub_cal_slope ( var, dz, nz, slp )
+
+    c   = dt*w(1)/dz(1)
+    !rst = (var(1) + 0.5*slp(1)*(1.-c)) / dz(1) 
+    rst = (sfc_var + 0.5*slp(1)*(1.-c)) / dz(1)
+    flux(1) = w(1)*rst*0.5
+
+    c   = dt*w(nz+1)/dz(nz)
+    rst = (top_var + 0.5*slp(nz)*(1.-c)) / dz(nz) 
+    flux(nz+1) = w(nz+1)*rst
 
     DO i = 1, nz+1
-      CALL Sub_cal_slope ( var, dz, nz, slp )
       IF (w(i) >= 0.) THEN
         IF (i == 1) CYCLE          ! inflow
         c   = dt*w(i)/dz(i-1)  
@@ -111,7 +120,6 @@ MODULE Mod_dyn_driver
         CALL FAIL_MSG("ERROR :: dynamics, Physical quantity cannot be negative")
       ENDIF
     END DO
-      
 
   END SUBROUTINE Sub_Finite_volume
 
@@ -120,7 +128,7 @@ MODULE Mod_dyn_driver
              (                        &
                var, sfc_var,          &
                top_var,               &
-               dz, nz,                &
+               dz, nz, CFL,           &
                dt,                    &
                w,                     &
                next_var               &
@@ -131,6 +139,7 @@ MODULE Mod_dyn_driver
     INTEGER,                    INTENT(IN) :: dt
     REAL,    DIMENSION(:),      INTENT(IN) :: dz, var
     REAL,    DIMENSION(1:nz+1), INTENT(IN) :: w
+    REAL,    DIMENSION(nz),     INTENT(IN) :: CFL                                   
     REAL,    DIMENSION(nz)                 :: next_var
     REAL,    DIMENSION(nz)                 :: slp,                               & 
                                               var_left, var_right
@@ -143,7 +152,7 @@ MODULE Mod_dyn_driver
     INTEGER                                :: i, j, k, ks, ke
     REAL                                   :: cn, rsum, dzsum, dtw
     REAL                                   :: cflerr, cflmaxx, cflmax, cflmaxcc
-    REAL                                   :: dvar
+    REAL                                   :: dvar, c
     INTEGER                                :: kk
 
     ke=nz
@@ -157,8 +166,8 @@ MODULE Mod_dyn_driver
                        - zwt(2,k)*slp(k) + zwt(3,k)*slp(k-1)
       var_right(k-1) = var_left(k)
     ENDDO
-
-    ! boundary values  
+   
+   ! boundary values  
     var_left (1) = var(1) - 0.5*slp(1)
     var_right(1) = var(1) + 0.5*slp(1)
     var_left (nz) = var(nz) - 0.5*slp(nz)
@@ -198,6 +207,11 @@ MODULE Mod_dyn_driver
     ! B.C = 0. 
     flux(ks)   = 0. 
     flux(ke+1) = 0. 
+
+   c   = dt*w(1)/dz(1)
+   !rst = (var(1) + 0.5*slp(1)*(1.-c)) / dz(1) 
+   rst = (sfc_var + 0.5*slp(1)*(1.-c)) / dz(1)
+   flux(1) = w(1)*rst
 
     ! Cal. flux
     tt = 2./3.
@@ -264,11 +278,15 @@ MODULE Mod_dyn_driver
     ! Cal. FV
     DO i = 1, nz
       dvar        = - (flux(i+1) - flux(i))
+      ! dvar        = - (flux(i+1)/dz(i+1) - flux(i)/dz(i))
       next_var(i) = var(i) + dvar * dt
-      IF ( next_var(i) .lt. 0. ) THEN !! mass conservation filter
-        CALL FAIL_MSG("ERROR :: dynamics, Physical quantity cannot be negative")
-      ENDIF
+      ! IF ( next_var(i) .lt. 0. ) THEN !! mass conservation filter
+      !   CALL FAIL_MSG("ERROR :: dynamics, Physical quantity cannot be negative")
+      ! ENDIF
     END DO
+  write(*,*) "flux======================="
+    write(*,*) flux
+
   END SUBROUTINE Sub_Finite_volume_PPM
 
 

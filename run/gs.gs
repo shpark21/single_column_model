@@ -6,10 +6,9 @@
 taxis=off
 var = q
 
-
 if ( taxis = on )
 'sdfopen output.nc'
-'set z 1 100'
+'set z 1 50'
 'set t 1 last'
 'set gxout grfill'
 'set cmin 0'
@@ -27,8 +26,8 @@ while(t<=last)
 'c'
 'set t 't
 say t
-'set z 1 100'
-'set vrange -10 400'
+'set z 1 50'
+* 'set vrange -0.001 0.01'
 'd 'var
 * 'gxprint x.png'
 * '!convert x.png -trim -quality 100 't'.png'

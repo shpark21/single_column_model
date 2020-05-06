@@ -12,8 +12,11 @@ MODULE Mod_global
                         ionum,              &
                         output_interval
 
-  INTEGER            :: read_psfc,     &
-                        read_pres        
+  INTEGER            :: read_pres,     &
+                        read_temp,     &        
+                        read_psfc,     &        
+                        incase
+
   INTEGER            :: slon,     &
                         elon,     &
                         slat,     &
@@ -44,6 +47,7 @@ MODULE Mod_global
     ! Declare variables 
   INTEGER                               :: nt, dt
   INTEGER                               :: varid
+  REAL, PARAMETER                       :: courant_number = 1.
   TYPE varinfo
     INTEGER                             :: varid
     REAL, DIMENSION(:),     ALLOCATABLE :: dz, next_dz,      &
@@ -56,11 +60,14 @@ MODULE Mod_global
   END TYPE varinfo
 
   TYPE(varinfo) ::    Temp,      & !! Temperature [K] 
+                      th,        & !! Theta 
                       q,         & !! Number of water droplets
                       w,         & !! Vertical velocity
                       dz,        & !! Difference z
                       time,      & !! Difference z
                       drop,      & !! Difference z
+                      p,         & !! Difference z
+                      CFL,       & !! Difference z
                       z            !! Height 
 
     ! For nc file 
@@ -102,8 +109,12 @@ MODULE Mod_global
     IF (.NOT. ALLOCATED(z%dz         )) ALLOCATE(z%dz              (nz))
 
     IF (.NOT. ALLOCATED(dz%dz        )) ALLOCATE(dz%dz             (nz))
+    IF (.NOT. ALLOCATED(p%dz         )) ALLOCATE(p%dz              (nz))
+
+    IF (.NOT. ALLOCATED(CFL%dz       )) ALLOCATE(CFL%dz            (nz))
 
     IF (.NOT. ALLOCATED(drop%num     )) ALLOCATE(drop%num (drop_column_num,nz))
+
 
   END SUBROUTINE Sub_allocate_dz
  
@@ -126,14 +137,20 @@ MODULE Mod_global
     DEALLOCATE(Temp%din      )
     DEALLOCATE(Temp%dz       )
     DEALLOCATE(Temp%next_dz  )
+
     DEALLOCATE(q%din         )
     DEALLOCATE(q%dz          )
     DEALLOCATE(q%next_dz     )
+
     DEALLOCATE(w%din         )
     DEALLOCATE(w%dz          )
+    DEALLOCATE(w%stag_dz     )
+
     DEALLOCATE(z%din         )
     DEALLOCATE(z%dz          )
+
     DEALLOCATE(dz%dz         )
+
     DEALLOCATE(Temp%sfc_dt   )
     DEALLOCATE(Temp%top_dt   )
     DEALLOCATE(Temp%dout     )

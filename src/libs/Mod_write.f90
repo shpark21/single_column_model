@@ -119,17 +119,6 @@
         ! Close the file. This causes netCDF to flush all buffers.
         CALL CHECK( nf90_close(ncid) ) 
 
-
-
       END SUBROUTINE Sub_write_netcdf
-
-
-      !!---------------------------------------------!!
-      SUBROUTINE Sub_write_bin   
-      END SUBROUTINE Sub_write_bin   
-
-      !!---------------------------------------------!!
-      SUBROUTINE Sub_write_grib  
-      END SUBROUTINE Sub_write_grib  
 
   END MODULE Mod_write

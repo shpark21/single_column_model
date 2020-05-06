@@ -2,18 +2,24 @@
   integrated_time = 7200        !! 
 /
 
+&var_info
+  incase          = 2           !! 1 : real case,     2 : ideal case
+  read_pres       = 2           !! 1 : read pressure, 2 : read geopotential-height
+  read_temp       = 2           !! 1 : read theta,    2 : read K
+  read_psfc       = 2           !! 1 : using psfc from input.
+                                !! if not, using psfc from constant value
+                                !! in model.(Ps = 1013.)
+/
+
 &Domain
   input_nz        = 37
-  read_pres       = 2           !! 1 : read pressure, 2 : read geopotential-height
-  read_psfc       = 2           !! 1 : using psfc form input.
-                                !! if not, using psfc form constant value
-                                !! in model.(Ps = 1013.)
 
   ! selet lat., lon.
   slon            = @slon@ 
   elon            = @elon@ 
   slat            = @slat@ 
   elat            = @elat@ 
+
   nz              = 100          !! unit = number of vertical layer
   z_top           = 10000.0      !! unit = m
 /
