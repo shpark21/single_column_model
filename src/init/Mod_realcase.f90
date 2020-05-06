@@ -25,8 +25,8 @@ MODULE Mod_realcase
                                               nz
     REAL, DIMENSION(input_nz), INTENT(IN)  ::     qv_in,          &  !! [kg/kg]
                                                 temp_in,          &  !! [K]
-                                                vert_in,          &  !! P [hPa] or Z [m]
-                                                      z              !! [m]
+                                                vert_in              !! P [hPa] or Z [m]
+    REAL, DIMENSION(nz),       INTENT(IN)  ::         z              !! [kg/kg]
     ! Out
     REAL, DIMENSION(nz),        INTENT(OUT) :: p_out, temp_out, qv_out
     ! Local
@@ -100,6 +100,21 @@ MODULE Mod_realcase
       end if
 
     end do 
+
+   open(unit =99, file ='t_check_interp.bin', status = "unknown", &
+         access='direct', recl=4*input_nz)
+      ! do i = 1, input_nz
+      ! write(99,rec=i) t_in(i)
+      ! enddo
+      write(99,rec=1) t_in
+      ! write(99,rec=2) qv_in
+
+  write(*,*) qv_in
+  write(*,*) "=="
+  write(*,*) qv_out
+  write(*,*) "=="
+
+  stop
 
 
     END SUBROUTINE Sub_real_init 

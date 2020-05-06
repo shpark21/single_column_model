@@ -15,7 +15,8 @@ rm -f ${srcdir}/output.nc main.exe
 # rm -f ${srcdir}/Mod_idealcase.mod ${srcdir}/Mod_realcase.o ${srcdir}/Mod_realcase.mod 
 # rm -f ${srcdir}/Mod_distribution.mod  ${srcdir}/Mod_distribution.o   
 
-ifort -r8 ${srcdir}/libs/Mod_global.f90          \
+# ifort -r8 ${srcdir}/libs/Mod_global.f90          \
+ifort  ${srcdir}/libs/Mod_global.f90          \
           ${srcdir}/libs/Mod_const.f90           \
           ${srcdir}/libs/Mod_read.f90            \
           ${srcdir}/init/Mod_idealcase.f90       \

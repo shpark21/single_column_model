@@ -30,8 +30,6 @@ PROGRAM main_prog
                             slon,      elon   )
   CALL Sub_init_vars
 
-  temp%dz(:) = 0.
-  temp%dz(2:10) = 100.
   IF (dyn_option .eq. 1) THEN
     CALL Sub_Integration_FD
   ELSE IF (dyn_option .eq. 2) THEN
